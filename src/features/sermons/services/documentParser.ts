@@ -104,20 +104,29 @@ function extractTitle(text: string, fileName: string): string {
 }
 
 /**
- * 설교 파일 → Draft 초안 자동 추출.
+ * 설교 텍스트 → Draft 초안 자동 추출.
  * 제목·설교 날짜·성경 본문을 최대한 추출하고, 부족한 부분은 사용자가 수정한다.
  * AI/파서는 사용자의 원문을 임의로 수정하지 않는다 — 본문은 원문 그대로 보존한다.
+ * 파일 업로드와 복사·붙여넣기가 동일한 추출 파이프라인을 공유한다.
  */
-export async function parseSermonFile(file: File): Promise<ParsedSermon> {
-  const text = (await readFileText(file)).replace(/\r\n/g, "\n").trim();
+export function parseSermonText(
+  rawText: string,
+  sourceName: string,
+): ParsedSermon {
+  const text = rawText.replace(/\r\n/g, "\n").trim();
   if (text.length === 0) {
-    throw new Error(`빈 파일입니다: ${file.name}`);
+    throw new Error(`내용이 비어 있습니다: ${sourceName}`);
   }
   return {
-    title: extractTitle(text, file.name),
-    sermonDate: extractDate(text.slice(0, 2000)) ?? extractDate(file.name),
+    title: extractTitle(text, sourceName),
+    sermonDate: extractDate(text.slice(0, 2000)) ?? extractDate(sourceName),
     scripture: extractScripture(text),
     body: text,
-    sourceFileName: file.name,
+    sourceFileName: sourceName,
   };
+}
+
+/** 설교 파일 → Draft 초안 자동 추출 */
+export async function parseSermonFile(file: File): Promise<ParsedSermon> {
+  return parseSermonText(await readFileText(file), file.name);
 }

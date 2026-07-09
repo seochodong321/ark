@@ -8,7 +8,12 @@ import type { SermonInput, User } from "@/shared/types";
 import { toUserMessage } from "@/shared/utils/errors";
 import { parseTags } from "@/shared/utils/text";
 import { extractYouTubeVideoId } from "@/shared/utils/youtube";
-import { isSupportedFile, parseSermonFile } from "../services/documentParser";
+import type { ParsedSermon } from "@/shared/types";
+import {
+  isSupportedFile,
+  parseSermonFile,
+  parseSermonText,
+} from "../services/documentParser";
 
 export type SermonFormAction = "draft" | "publish";
 
@@ -42,8 +47,27 @@ export function SermonForm({
 
   const [parsing, setParsing] = useState(false);
   const [parseNote, setParseNote] = useState<string | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
   const [action, setAction] = useState<SermonFormAction | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /** 파일·붙여넣기 공통 — 추출 결과를 양식에 채운다 */
+  const applyParsed = (parsed: ParsedSermon, sourceLabel: string) => {
+    setTitle(parsed.title);
+    setBody(parsed.body);
+    if (parsed.sermonDate) setSermonDate(parsed.sermonDate);
+    if (parsed.scripture) setScripture(parsed.scripture);
+    const extracted = [
+      "제목",
+      parsed.sermonDate && "설교 날짜",
+      parsed.scripture && "성경 본문",
+      "본문",
+    ].filter(Boolean);
+    setParseNote(
+      `${sourceLabel}에서 ${extracted.join("·")}을 자동으로 추출했습니다. 부족한 부분만 수정하세요.`,
+    );
+  };
 
   const handleFileImport = async (file: File | undefined) => {
     if (!file) return;
@@ -54,24 +78,22 @@ export function SermonForm({
     }
     setParsing(true);
     try {
-      const parsed = await parseSermonFile(file);
-      setTitle(parsed.title);
-      setBody(parsed.body);
-      if (parsed.sermonDate) setSermonDate(parsed.sermonDate);
-      if (parsed.scripture) setScripture(parsed.scripture);
-      const extracted = [
-        "제목",
-        parsed.sermonDate && "설교 날짜",
-        parsed.scripture && "성경 본문",
-        "본문",
-      ].filter(Boolean);
-      setParseNote(
-        `${file.name}에서 ${extracted.join("·")}을 자동으로 추출했습니다. 부족한 부분만 수정하세요.`,
-      );
+      applyParsed(await parseSermonFile(file), file.name);
     } catch (err) {
       setError(toUserMessage(err));
     } finally {
       setParsing(false);
+    }
+  };
+
+  const handlePasteAnalyze = () => {
+    setError(null);
+    try {
+      applyParsed(parseSermonText(pasteText, "붙여넣은 텍스트"), "붙여넣은 텍스트");
+      setPasteText("");
+      setPasteOpen(false);
+    } catch (err) {
+      setError(toUserMessage(err));
     }
   };
 
@@ -114,22 +136,54 @@ export function SermonForm({
     <form onSubmit={(e) => handleSubmit(e, "draft")} className="space-y-6">
       {showFileImport && (
         <div className="rounded-xl border-2 border-dashed border-line bg-white p-6 text-center">
-          <p className="mb-1 font-medium text-ink">설교 파일 불러오기</p>
+          <p className="mb-1 font-medium text-ink">설교 불러오기</p>
           <p className="mb-4 text-xs text-ink-faint">
-            DOCX · Markdown · TXT — 제목, 날짜, 성경 본문을 자동으로 추출합니다
+            파일(DOCX · Markdown · TXT) 또는 복사한 텍스트에서 제목, 날짜,
+            성경 본문을 자동으로 추출합니다
           </p>
-          <label className="inline-block cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong">
-            {parsing ? "분석 중…" : "파일 선택"}
-            <input
-              type="file"
-              accept=".docx,.md,.txt"
-              className="hidden"
-              disabled={parsing}
-              onChange={(e) => handleFileImport(e.target.files?.[0])}
-            />
-          </label>
+          <div className="flex items-center justify-center gap-3">
+            <label className="inline-block cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong">
+              {parsing ? "분석 중…" : "파일 선택"}
+              <input
+                type="file"
+                accept=".docx,.md,.txt"
+                className="hidden"
+                disabled={parsing}
+                onChange={(e) => handleFileImport(e.target.files?.[0])}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setPasteOpen((v) => !v)}
+              className="rounded-lg border border-line bg-white px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-accent"
+            >
+              텍스트 붙여넣기
+            </button>
+          </div>
+          {pasteOpen && (
+            <div className="mt-4 space-y-3 text-left">
+              <Textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                rows={10}
+                placeholder={
+                  "설교 전문을 붙여넣으세요.\n\n첫 줄이 제목으로, 본문 속 날짜와 성경 구절이 자동으로 추출됩니다."
+                }
+                className="font-serif leading-relaxed"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  disabled={pasteText.trim().length === 0}
+                  onClick={handlePasteAnalyze}
+                >
+                  자동 추출로 양식 채우기
+                </Button>
+              </div>
+            </div>
+          )}
           <p className="mt-3 text-xs text-ink-faint">
-            여러 파일을 한 번에 옮기시려면 Migration Wizard를 이용하세요.
+            여러 편을 한 번에 옮기시려면 Migration Wizard를 이용하세요.
           </p>
           {parseNote && (
             <p className="mt-3 rounded-lg bg-accent-soft p-3 text-left text-xs leading-relaxed text-accent-strong">
