@@ -12,14 +12,14 @@ export default function TestimoniesPage() {
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-2xl font-bold text-ink">간증</h1>
+          <h1 className="mb-1.5 font-serif text-3xl font-bold text-ink">간증</h1>
           <p className="text-sm text-ink-soft">
-            삶 가운데 행하신 하나님의 일을 기록합니다
+            삶 가운데 행하신 하나님의 일, 함께 읽고 나눕니다
           </p>
         </div>
         <Link
           href={ROUTES.testimonyNew}
-          className="shrink-0 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+          className="shrink-0 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
         >
           간증 기록하기
         </Link>

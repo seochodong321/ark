@@ -37,18 +37,21 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 px-6">
-        <div className="flex items-center gap-8">
-          <Link href={ROUTES.home} className="text-xl font-bold tracking-tight text-ink">
-            ARK
+        <div className="flex items-center gap-9">
+          <Link
+            href={ROUTES.home}
+            className="font-serif text-[22px] font-bold tracking-tight text-ink"
+          >
+            ARK<span className="text-accent">.</span>
           </Link>
-          <nav className="hidden items-center gap-5 sm:flex">
+          <nav className="hidden items-center gap-6 sm:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm text-ink-soft transition-colors hover:text-ink"
+                className="text-sm text-ink-soft underline-offset-8 transition-colors hover:text-ink hover:underline hover:decoration-accent hover:decoration-2"
               >
                 {item.label}
               </Link>
@@ -62,7 +65,7 @@ export function Header() {
               {canWriteSermon(user.role) && (
                 <Link
                   href={ROUTES.migration}
-                  className="hidden rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong sm:block"
+                  className="hidden rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong sm:block"
                 >
                   설교 보관하기
                 </Link>
@@ -77,7 +80,7 @@ export function Header() {
                   <Avatar name={user.name} photoUrl={user.photoUrl} size="sm" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-11 w-56 rounded-xl border border-line bg-white py-2 shadow-lg">
+                  <div className="absolute right-0 top-11 w-56 rounded-2xl border border-line bg-white py-2 shadow-xl shadow-ink/5">
                     <div className="border-b border-line px-4 pb-2">
                       <p className="truncate text-sm font-semibold text-ink">
                         {user.name}
@@ -141,7 +144,7 @@ export function Header() {
               </Link>
               <Link
                 href={ROUTES.signup}
-                className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-accent"
               >
                 시작하기
               </Link>

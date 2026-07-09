@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function SearchPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
-      <h1 className="mb-8 text-2xl font-bold text-ink">검색</h1>
+      <h1 className="mb-8 font-serif text-3xl font-bold text-ink">검색</h1>
       <Suspense fallback={<LoadingState />}>
         <SearchView />
       </Suspense>

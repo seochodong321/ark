@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* 종이 질감의 따뜻한 배경 — 텍스트 중심 읽기 경험 */
-  --color-paper: #faf9f6;
-  --color-paper-warm: #f4f1ea;
+  /* 따뜻한 종이 질감 위의 에디토리얼 읽기 경험 */
+  --color-paper: #fcfbf8;
+  --color-paper-warm: #f3f0e8;
 
   /* 본문 잉크 */
-  --color-ink: #211d19;
-  --color-ink-soft: #57534e;
-  --color-ink-faint: #a8a29e;
+  --color-ink: #1b1813;
+  --color-ink-soft: #5d564b;
+  --color-ink-faint: #a49c8e;
 
-  /* ARK 액센트 — 깊고 차분한 상록수 톤 */
-  --color-accent: #2f5240;
-  --color-accent-strong: #24402f;
-  --color-accent-soft: #e8efe9;
+  /* ARK 액센트 — 깊은 상록수 */
+  --color-accent: #1e5a3d;
+  --color-accent-strong: #143f2a;
+  --color-accent-soft: #e7efe8;
 
-  --color-line: #e7e3db;
+  /* 포인트 — 오래된 금박 */
+  --color-gold: #a97e2f;
+
+  --color-line: #e9e4d8;
 
   --font-sans: var(--font-noto-sans), "Apple SD Gothic Neo", sans-serif;
   --font-serif: var(--font-noto-serif), "Apple SD Gothic Neo", Georgia, serif;
@@ -26,20 +29,26 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #d9e8dd;
+  color: var(--color-ink);
 }
 
 /* 설교/간증 본문 읽기 스타일 (Markdown 렌더링) */
 .article-body {
   font-family: var(--font-serif);
-  font-size: 1.0625rem;
-  line-height: 2;
+  font-size: 1.125rem;
+  line-height: 2.05;
   color: var(--color-ink);
   word-break: keep-all;
   overflow-wrap: break-word;
 }
 
 .article-body > * + * {
-  margin-top: 1.25em;
+  margin-top: 1.3em;
 }
 
 .article-body h1,
@@ -49,6 +58,7 @@ body {
   font-weight: 700;
   line-height: 1.5;
   margin-top: 2em;
+  letter-spacing: -0.01em;
 }
 
 .article-body h1 {

@@ -1,11 +1,39 @@
+import Link from "next/link";
+import { ROUTES } from "@/shared/constants/routes";
+
+const FOOTER_LINKS = [
+  { href: ROUTES.sermons, label: "설교" },
+  { href: ROUTES.testimonies, label: "간증" },
+  { href: ROUTES.search, label: "검색" },
+  { href: ROUTES.migration, label: "설교 옮기기" },
+  { href: ROUTES.pastorApply, label: "목회자 인증" },
+];
+
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-line">
-      <div className="mx-auto w-full max-w-5xl px-6 py-10 text-center">
-        <p className="text-sm font-semibold tracking-tight text-ink">ARK</p>
-        <p className="mt-1 text-xs leading-relaxed text-ink-faint">
-          신앙의 기록을 보존하는 디지털 아카이브
-        </p>
+    <footer className="mt-auto border-t border-line bg-paper-warm/40">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-6 py-14 text-center sm:flex-row sm:justify-between sm:text-left">
+        <div>
+          <p className="font-serif text-lg font-bold tracking-tight text-ink">
+            ARK<span className="text-accent">.</span>
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">
+            신앙의 기록을 보존하는 디지털 아카이브
+            <br />
+            오늘의 말씀은 다음 세대가 다시 찾을 기록입니다.
+          </p>
+        </div>
+        <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {FOOTER_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-xs text-ink-soft transition-colors hover:text-accent"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </footer>
   );

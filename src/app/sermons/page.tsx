@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 export default function SermonsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
-      <h1 className="mb-1 text-2xl font-bold text-ink">설교</h1>
-      <p className="mb-8 text-sm text-ink-soft">
-        다음 세대가 다시 찾을 말씀의 기록
+      <h1 className="mb-1.5 font-serif text-3xl font-bold text-ink">설교</h1>
+      <p className="mb-10 text-sm text-ink-soft">
+        오늘 다시 읽는 말씀 — 성경 본문과 주제로 찾아보세요
       </p>
       <SermonListView />
     </main>

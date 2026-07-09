@@ -102,12 +102,12 @@ export function HomeSections() {
   }
 
   return (
-    <div className="grid gap-14 lg:grid-cols-[1fr_320px]">
-      <div className="min-w-0 space-y-14">
+    <div className="grid gap-14 lg:grid-cols-[1fr_300px]">
+      <div className="min-w-0 space-y-16">
         {data.curatedSermons.length > 0 && (
           <HomeSection
-            title="추천 설교"
-            subtitle={data.curationHeadline || "운영자가 고른 기록"}
+            title="이번 주의 추천"
+            subtitle={data.curationHeadline || "다시 꺼내 읽고 싶은 기록"}
             moreHref={ROUTES.sermons}
           >
             {data.curatedSermons.map((sermon) => (
@@ -117,7 +117,7 @@ export function HomeSections() {
         )}
 
         {data.latestSermons.length > 0 && (
-          <HomeSection title="최신 설교" moreHref={ROUTES.sermons}>
+          <HomeSection title="새로 올라온 설교" moreHref={ROUTES.sermons}>
             {data.latestSermons.map((sermon) => (
               <SermonCard key={sermon.id} sermon={sermon} />
             ))}
@@ -125,7 +125,7 @@ export function HomeSections() {
         )}
 
         {data.latestTestimonies.length > 0 && (
-          <HomeSection title="최신 간증" moreHref={ROUTES.testimonies}>
+          <HomeSection title="새로 올라온 간증" moreHref={ROUTES.testimonies}>
             {data.latestTestimonies.map((testimony) => (
               <TestimonyCard key={testimony.id} testimony={testimony} />
             ))}
@@ -135,25 +135,25 @@ export function HomeSections() {
 
       <aside>
         {data.popularSermons.length > 0 && (
-          <div className="rounded-xl border border-line bg-white p-6 lg:sticky lg:top-24">
-            <h2 className="mb-4 text-sm font-semibold text-ink">
+          <div className="lg:sticky lg:top-24">
+            <h2 className="border-b-2 border-ink pb-3 font-serif text-base font-bold text-ink">
               많이 읽힌 기록
             </h2>
-            <ol className="space-y-4">
+            <ol className="divide-y divide-line">
               {data.popularSermons.map((sermon, i) => (
                 <li key={sermon.id}>
                   <Link
                     href={ROUTES.sermonDetail(sermon.id)}
-                    className="group flex gap-3"
+                    className="group flex gap-4 py-4"
                   >
-                    <span className="font-serif text-lg font-bold text-ink-faint">
-                      {i + 1}
+                    <span className="font-serif text-lg font-bold leading-none text-gold">
+                      {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-ink group-hover:text-accent">
+                      <span className="block truncate text-sm font-medium text-ink transition-colors group-hover:text-accent">
                         {sermon.title}
                       </span>
-                      <span className="mt-0.5 block text-xs text-ink-faint">
+                      <span className="mt-1 block text-xs text-ink-faint">
                         {sermon.authorName} · 조회 {sermon.viewCount}
                       </span>
                     </span>
@@ -181,14 +181,16 @@ function HomeSection({
 }) {
   return (
     <section>
-      <div className="mb-2 flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between border-b-2 border-ink pb-3">
         <div>
-          <h2 className="text-lg font-bold text-ink">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-faint">{subtitle}</p>}
+          <h2 className="font-serif text-xl font-bold text-ink">{title}</h2>
+          {subtitle && (
+            <p className="mt-1 text-xs text-ink-faint">{subtitle}</p>
+          )}
         </div>
         <Link
           href={moreHref}
-          className="text-xs text-ink-faint hover:text-accent"
+          className="shrink-0 text-xs font-medium text-ink-faint transition-colors hover:text-accent"
         >
           더 보기 →
         </Link>

@@ -33,7 +33,7 @@ export function Field({ label, required, error, hint, children }: FieldProps) {
 }
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft disabled:bg-paper-warm disabled:text-ink-faint";
+  "w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink transition-colors placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft disabled:bg-paper-warm disabled:text-ink-faint";
 
 export function Input({
   className,

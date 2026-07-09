@@ -17,17 +17,28 @@ export function HomeSearchBox() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="relative">
+      <svg
+        aria-hidden
+        viewBox="0 0 20 20"
+        className="pointer-events-none absolute left-5 top-1/2 size-[18px] -translate-y-1/2 text-ink-faint"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <circle cx="8.5" cy="8.5" r="5.75" />
+        <path d="m13 13 4 4" strokeLinecap="round" />
+      </svg>
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="말씀, 간증, 목회자를 검색해보세요"
+        placeholder="말씀, 간증, 목회자 검색"
         aria-label="검색어"
-        className="w-full rounded-xl border border-line bg-white px-5 py-3.5 text-base text-ink shadow-sm placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
+        className="w-full rounded-full border border-line bg-white py-4 pl-12 pr-28 text-base text-ink shadow-[0_2px_12px_rgba(27,24,19,0.05)] transition-colors placeholder:text-ink-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft"
       />
       <button
         type="submit"
-        className="shrink-0 rounded-xl bg-ink px-6 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
       >
         검색
       </button>
