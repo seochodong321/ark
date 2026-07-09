@@ -26,8 +26,9 @@ export interface DraftRow {
   id: string;
   input: SermonInput;
   sourceFileName: string;
+  /** 공개 선택 여부 — 기본 false(비공개). 체크한 설교만 모두에게 공개된다 */
   included: boolean;
-  /** 검토 단계에서 수정됨 — 게시 전에 Firestore에 반영 필요 */
+  /** 검토 단계에서 수정됨 — 완료 전에 Firestore에 반영 필요 */
   dirty: boolean;
 }
 
@@ -36,7 +37,12 @@ type WizardState =
   | { step: "analyzing"; done: number; total: number }
   | { step: "review"; rows: DraftRow[]; failures: MigrationFailure[] }
   | { step: "publishing"; rows: DraftRow[]; failures: MigrationFailure[] }
-  | { step: "done"; summary: MigrationSummary; excludedCount: number };
+  | {
+      step: "done";
+      summary: MigrationSummary;
+      publishedCount: number;
+      privateCount: number;
+    };
 
 export function MigrationWizard() {
   return (
@@ -70,14 +76,15 @@ function Wizard({ user }: { user: User }) {
         setState({ step: "select" });
         return;
       }
-      // 분석 즉시 Draft로 저장 — 검토 중 이탈해도 기록은 보존된다
+      // 분석 즉시 비공개로 저장 — 검토 중 이탈해도 기록은 보존된다
       const inputs = parsed.map(parsedToInput);
       const ids = await createSermonDrafts(user, inputs);
+      // 기본은 비공개 — 공개는 설교마다 본인이 직접 선택한다
       const rows: DraftRow[] = ids.map((id, i) => ({
         id,
         input: inputs[i],
         sourceFileName: parsed[i].sourceFileName,
-        included: true,
+        included: false,
         dirty: false,
       }));
       setState({ step: "review", rows, failures });
@@ -103,34 +110,31 @@ function Wizard({ user }: { user: User }) {
     setState({ ...state, rows });
   };
 
-  const handlePublishAll = async () => {
+  const handleFinish = async () => {
     if (state.step !== "review") return;
     const { rows, failures } = state;
-    const included = rows.filter((r) => r.included);
-    if (included.length === 0) {
-      setError("게시할 설교를 선택해주세요.");
-      return;
-    }
+    const toPublish = rows.filter((r) => r.included);
     setError(null);
     setState({ step: "publishing", rows, failures });
     try {
-      // 검토 중 수정된 Draft를 먼저 반영한 뒤 일괄 게시한다
+      // 검토 중 수정한 내용은 공개 여부와 무관하게 먼저 반영한다
       const dirtyRows = rows.filter((r) => r.dirty);
       for (const group of chunk(dirtyRows, 10)) {
         await Promise.all(
           group.map((row) => updateSermon(row.id, user, row.input)),
         );
       }
-      await publishSermonsBulk(
-        user.uid,
-        included.map((r) => ({ id: r.id, title: r.input.title })),
-      );
+      if (toPublish.length > 0) {
+        await publishSermonsBulk(
+          user.uid,
+          toPublish.map((r) => ({ id: r.id, title: r.input.title })),
+        );
+      }
       setState({
         step: "done",
-        summary: computeMigrationSummary(
-          included.map((r) => r.input.sermonDate),
-        ),
-        excludedCount: rows.length - included.length,
+        summary: computeMigrationSummary(rows.map((r) => r.input.sermonDate)),
+        publishedCount: toPublish.length,
+        privateCount: rows.length - toPublish.length,
       });
     } catch (err) {
       setError(toUserMessage(err));
@@ -157,13 +161,14 @@ function Wizard({ user }: { user: User }) {
           publishing={state.step === "publishing"}
           onRowChange={handleRowChange}
           onToggleRow={handleToggleRow}
-          onPublishAll={handlePublishAll}
+          onFinish={handleFinish}
         />
       )}
       {state.step === "done" && (
         <DoneStep
           summary={state.summary}
-          excludedCount={state.excludedCount}
+          publishedCount={state.publishedCount}
+          privateCount={state.privateCount}
           username={user.username}
         />
       )}

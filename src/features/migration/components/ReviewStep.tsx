@@ -14,25 +14,27 @@ interface ReviewStepProps {
   publishing: boolean;
   onRowChange: (index: number, input: SermonInput) => void;
   onToggleRow: (index: number) => void;
-  onPublishAll: () => void;
+  onFinish: () => void;
 }
 
-/** 3단계: Draft 검토 — 부족한 부분만 고치고 한 번에 게시 */
+/** 3단계: 검토 — 기본은 비공개 보관, 공개할 설교만 직접 선택한다 */
 export function ReviewStep({
   rows,
   failures,
   publishing,
   onRowChange,
   onToggleRow,
-  onPublishAll,
+  onFinish,
 }: ReviewStepProps) {
-  const includedCount = rows.filter((r) => r.included).length;
+  const publishCount = rows.filter((r) => r.included).length;
 
   return (
     <div>
       <p className="mb-2 text-sm leading-relaxed text-ink-soft">
-        {rows.length}개의 Draft가 만들어졌습니다. 제목·날짜·성경 본문을 확인하고
-        한 번에 게시하세요. 체크를 해제한 설교는 게시되지 않고 Draft로 남습니다.
+        {rows.length}편이 <strong className="text-ink">비공개로 보관</strong>
+        되었습니다. 내용을 확인하고, 모두에게 공개할 설교만 선택하세요.
+        선택하지 않은 설교는 나만 볼 수 있으며, 내 아카이브에서 언제든 공개할 수
+        있습니다.
       </p>
 
       {failures.length > 0 && (
@@ -55,19 +57,29 @@ export function ReviewStep({
           <li
             key={row.id}
             className={cn(
-              "rounded-xl border bg-white p-4 transition-opacity",
-              row.included ? "border-line" : "border-line opacity-50",
+              "rounded-xl border bg-white p-4 transition-colors",
+              row.included ? "border-accent" : "border-line",
             )}
           >
             <div className="mb-3 flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-xs text-ink-faint">
+              <span className="truncate text-xs text-ink-faint">
+                {row.sourceFileName}
+              </span>
+              <label
+                className={cn(
+                  "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  row.included
+                    ? "border-accent bg-accent-soft text-accent-strong"
+                    : "border-line text-ink-soft hover:border-ink-faint",
+                )}
+              >
                 <input
                   type="checkbox"
                   checked={row.included}
                   onChange={() => onToggleRow(index)}
-                  className="size-4 accent-accent"
+                  className="size-3.5 accent-accent"
                 />
-                {row.sourceFileName}
+                {row.included ? "공개됨" : "공개하기"}
               </label>
             </div>
             <div className="space-y-3">
@@ -112,14 +124,14 @@ export function ReviewStep({
       </ul>
 
       <div className="sticky bottom-0 mt-8 border-t border-line bg-paper py-4">
-        <Button
-          size="lg"
-          className="w-full"
-          loading={publishing}
-          onClick={onPublishAll}
-        >
-          {includedCount}개 설교 한 번에 게시하기
+        <Button size="lg" className="w-full" loading={publishing} onClick={onFinish}>
+          {publishCount > 0
+            ? `${publishCount}편 공개하고 보관 완료`
+            : "모두 비공개로 보관 완료"}
         </Button>
+        <p className="mt-2 text-center text-xs text-ink-faint">
+          공개 {publishCount}편 · 비공개 {rows.length - publishCount}편
+        </p>
       </div>
     </div>
   );

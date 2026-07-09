@@ -77,6 +77,7 @@ src/
 │   ├── comments/ bookmarks/
 │   ├── seeds/ reports/
 │   ├── search/ curation/
+│   ├── bible/                #   성경 본문 인용 (참조 파서 + 개역한글 로더)
 │   ├── archive/ home/ admin/
 └── shared/                   # 공통 계층
     ├── components/ui/        # Button, Field, Modal, StateView, MarkdownView …
@@ -130,15 +131,26 @@ src/
   - 본문 원문은 파서가 수정하지 않고 그대로 보존.
 - 입력 항목: 제목, 설교 날짜, 성경 본문, 본문, 태그, 시리즈명(선택), 대표 이미지(선택), 유튜브 링크(선택).
 - 유튜브 링크에서 영상 ID를 추출해 임베드 플레이어 제공, "유튜브에서 보기" 링크 상시 제공.
-- 모든 설교는 **Draft → 게시** 흐름. 최초 게시 시 씨앗 +5 (재게시 중복 지급 방지).
+- **선택적 공개**: 모든 기록은 먼저 **비공개**(status: draft)로 보관된다. 작성자가 공개를
+  선택한 글만 모두에게 보이며(published), 본인 아카이브에서는 전체 열람·공개↔비공개
+  전환이 가능하다. 최초 공개 시 씨앗 +5 (재공개 중복 지급 방지).
+- **성경 본문 자동 인용**: 설교 상세에서 성경 참조("요한복음 3:16-21", "시 23편" 등)를
+  해석해 본문 말씀을 인용 블록으로 보여준다 (`features/bible`).
+  - **저작권 검토 결과**: 개역개정판은 대한성서공회 저작권이 유효해 사용 불가.
+    **개역한글판(1961)은 저작권 보호기간 만료(퍼블릭 도메인)**로 자유 사용 가능 — 채택.
+  - 데이터: The Unbound Bible(Biola University) 공개 배포본을 책별 정적
+    JSON(`public/bible/krv/1~66.json`, 총 30,625절)으로 변환해 내장.
+    외부 API 의존이 없어 장기 보존에 안전하며, 책 단위 온디맨드 로드로 초기
+    번들에 영향이 없다.
 
 ### Migration Wizard (migration) — 대표 기능
 1. **파일 선택**: 여러 파일 또는 ZIP 드래그&드롭 (ZIP은 클라이언트에서 해제, `__MACOSX`/숨김 파일 제외).
    파일이 없으면 **텍스트 붙여넣기**로 한 편씩 반복 추가 가능 (내부적으로 `.txt` 항목으로 변환되어 동일 흐름 처리).
-2. **분석**: 전 파일 파싱 → 즉시 Draft로 저장 (검토 중 이탈해도 기록 보존).
-3. **검토**: 제목/날짜/성경 본문 인라인 수정, 게시 제외 선택(제외분은 Draft로 유지).
-4. **일괄 게시**: batch 커밋(400개 단위 청크) + 씨앗 일괄 보상.
-5. **완료 화면**: 총 설교 수, 첫 설교 날짜, 최신 설교 날짜, 총 사역 기간.
+2. **분석**: 전 파일 파싱 → 즉시 **비공개로 저장** (검토 중 이탈해도 기록 보존).
+3. **검토**: 제목/날짜/성경 본문 인라인 수정. **기본은 전체 비공개** — 공개할 설교만
+   개별 선택한다. 선택하지 않은 설교는 나만 보는 기록으로 남는다.
+4. **완료**: 선택분만 batch 공개(400개 단위 청크) + 씨앗 보상.
+5. **완료 화면**: 총 보관 수, 공개/비공개 수, 첫·최신 설교 날짜, 총 사역 기간.
 
 ### 목회자 페이지 (`/@username`)
 - 이름, 프로필, 소개, 교회, 직분, 교단, 사역 분야, **설교 개수, 사역 기간**(집계 쿼리로 계산).
@@ -147,8 +159,9 @@ src/
 
 ### 간증 (testimonies)
 - 일반회원이 Markdown 에디터로 작성 (작성/미리보기 탭).
-- **자동 저장(Draft)**: 입력 멈춤 2.5초 후 자동 저장, 상태 표시.
-- 게시 시 씨앗 +3. 간증도 검색 대상.
+- **자동 저장**: 입력 멈춤 2.5초 후 비공개로 자동 저장, 상태 표시.
+- 설교와 동일한 선택적 공개 메커니즘 — 공개하기 전에는 나만 볼 수 있다.
+- 최초 공개 시 씨앗 +3. 간증도 검색 대상.
 
 ### 검색 (search)
 - 대상: 제목, 본문, 작성자, 성경 본문, 태그.
@@ -190,7 +203,7 @@ src/
 | `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance, createdAt, updatedAt |
 | `usernames` | username | uid — Username 유일성 보장용 매핑 |
 | `pastors` | uid | 신청서+프로필: churchName, denomination, position, phone, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
-| `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft/published/hidden), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |
+| `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft=비공개·작성자 전용 / published=공개 / hidden=관리자 숨김), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |
 | `testimonies` | auto | sermons와 동일 구조에서 scripture/series 제외 |
 | `comments` | auto | targetType, targetId, authorId, authorName, body, createdAt |
 | `bookmarks` | `{uid}_{type}_{id}` | uid, targetType, targetId, targetTitle, targetAuthorName |
@@ -210,6 +223,8 @@ src/
 - [x] 목회자 인증 신청 + 관리자 승인/반려
 - [x] 설교 업로드(파일 자동 추출), 등록/수정/게시, 목록/상세
 - [x] 복사·붙여넣기 입력 — 설교 등록·Migration Wizard에서 파일 없이 텍스트로 보관
+- [x] 선택적 공개 메커니즘 — 기본 비공개, 개별 공개 선택, 아카이브에서 공개↔비공개 전환
+- [x] 성경 본문 자동 인용 — 개역한글(퍼블릭 도메인) 내장, 참조 파싱 후 인용 블록 렌더링
 - [x] Migration Wizard (다중/ZIP → 분석 → Draft → 검토 → 일괄 게시 → 통계)
 - [x] 목회자 페이지(@username) — 프로필, 통계, 설교 탐색 필터
 - [x] 내 아카이브 (Draft 관리)

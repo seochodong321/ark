@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/AuthProvider";
+import { ScriptureQuote } from "@/features/bible/components/ScriptureQuote";
 import { BookmarkButton } from "@/features/bookmarks/components/BookmarkButton";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { ReportButton } from "@/features/reports/components/ReportButton";
@@ -124,12 +125,12 @@ export function SermonDetailView({ id }: { id: string }) {
         <div className="mb-6 flex items-center justify-between rounded-lg bg-amber-50 px-4 py-3">
           <span className="text-sm text-amber-800">
             {sermon.status === "draft"
-              ? "Draft — 게시 전에는 본인만 볼 수 있습니다."
-              : "비공개 처리된 설교입니다."}
+              ? "비공개 — 나만 볼 수 있는 기록입니다."
+              : "관리자에 의해 숨김 처리된 설교입니다."}
           </span>
           {isOwner && sermon.status === "draft" && (
             <Button size="sm" loading={busy} onClick={handlePublish}>
-              게시하기
+              공개하기
             </Button>
           )}
         </div>
@@ -187,6 +188,8 @@ export function SermonDetailView({ id }: { id: string }) {
       )}
 
       {sermon.youtubeVideoId && <YouTubeEmbed videoId={sermon.youtubeVideoId} />}
+
+      <ScriptureQuote scripture={sermon.scripture} />
 
       <MarkdownView content={sermon.body} />
 

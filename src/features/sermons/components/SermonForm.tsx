@@ -279,7 +279,7 @@ export function SermonForm({
           loading={action === "draft"}
           disabled={action !== null && action !== "draft"}
         >
-          {publishedMode ? "저장하기" : "Draft로 저장"}
+          {publishedMode ? "저장하기" : "비공개로 저장"}
         </Button>
         {!publishedMode && (
           <Button
@@ -289,7 +289,7 @@ export function SermonForm({
             disabled={action !== null && action !== "publish"}
             onClick={(e) => handleSubmit(e, "publish")}
           >
-            게시하기
+            공개하기
           </Button>
         )}
       </div>

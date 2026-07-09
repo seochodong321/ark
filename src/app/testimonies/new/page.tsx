@@ -10,7 +10,8 @@ export default function TestimonyNewPage() {
     <main className="mx-auto w-full max-w-2xl px-6 py-12">
       <h1 className="mb-1 text-2xl font-bold text-ink">간증 기록하기</h1>
       <p className="mb-8 text-sm text-ink-soft">
-        작성 중인 내용은 Draft로 자동 저장됩니다.
+        작성 중인 내용은 비공개로 자동 저장됩니다. 공개하기 전에는 나만 볼 수
+        있습니다.
       </p>
       <TestimonyNewView />
     </main>

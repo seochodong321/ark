@@ -30,9 +30,9 @@ const STATUS_LABEL: Record<
   ContentStatus,
   { label: string; tone: "neutral" | "accent" | "warning" }
 > = {
-  draft: { label: "Draft", tone: "warning" },
-  published: { label: "게시됨", tone: "accent" },
-  hidden: { label: "비공개", tone: "neutral" },
+  draft: { label: "비공개(작성자)", tone: "neutral" },
+  published: { label: "공개", tone: "accent" },
+  hidden: { label: "숨김(관리자)", tone: "warning" },
 };
 
 interface AdminContentItem {

@@ -6,11 +6,13 @@ import { formatMinistrySpan, formatSermonDate } from "@/shared/utils/date";
 /** 4단계: 완료 — 이전된 사역의 기록을 보여준다 */
 export function DoneStep({
   summary,
-  excludedCount,
+  publishedCount,
+  privateCount,
   username,
 }: {
   summary: MigrationSummary;
-  excludedCount: number;
+  publishedCount: number;
+  privateCount: number;
   username: string;
 }) {
   const span = formatMinistrySpan(
@@ -27,12 +29,15 @@ export function DoneStep({
         설교가 방주에 실렸습니다
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-        이제 이 기록은 다음 세대가 다시 찾을 수 있습니다.
+        이제 이 기록은 안전하게 보존됩니다.
       </p>
 
       <dl className="mx-auto mt-10 grid max-w-lg grid-cols-2 gap-4">
-        <StatCard label="총 설교 수" value={`${summary.totalCount}편`} />
-        <StatCard label="총 사역 기간" value={span || "—"} />
+        <StatCard label="총 보관" value={`${summary.totalCount}편`} />
+        <StatCard
+          label="공개 / 비공개"
+          value={`${publishedCount}편 / ${privateCount}편`}
+        />
         <StatCard
           label="첫 설교"
           value={formatSermonDate(summary.firstSermonDate) || "—"}
@@ -43,24 +48,31 @@ export function DoneStep({
         />
       </dl>
 
-      {excludedCount > 0 && (
-        <p className="mt-6 text-xs text-ink-faint">
-          게시하지 않은 {excludedCount}편은 내 아카이브에 Draft로 남아 있습니다.
+      {span && (
+        <p className="mt-6 font-serif text-sm text-ink-soft">
+          총 사역 기간 <strong className="text-ink">{span}</strong>의 기록입니다.
+        </p>
+      )}
+
+      {privateCount > 0 && (
+        <p className="mt-4 text-xs leading-relaxed text-ink-faint">
+          비공개 설교 {privateCount}편은 나만 볼 수 있습니다.
+          <br />내 아카이브에서 언제든 한 편씩 공개할 수 있습니다.
         </p>
       )}
 
       <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
         <Link
-          href={ROUTES.pastorPage(username)}
-          className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+          href={ROUTES.archive}
+          className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
         >
-          내 설교 아카이브 보기
+          내 아카이브에서 관리하기
         </Link>
         <Link
-          href={ROUTES.archive}
-          className="rounded-lg border border-line bg-white px-5 py-3 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent"
+          href={ROUTES.pastorPage(username)}
+          className="rounded-full border border-line bg-white px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
         >
-          Draft 관리하기
+          공개된 내 페이지 보기
         </Link>
       </div>
     </div>

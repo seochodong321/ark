@@ -159,7 +159,7 @@ export function TestimonyEditor({ author, existing }: TestimonyEditorProps) {
 
       <div className="flex justify-end border-t border-line pt-5">
         <Button size="lg" loading={publishing} onClick={handlePublish}>
-          {isPublished ? "수정 내용 저장하기" : "게시하기"}
+          {isPublished ? "수정 내용 저장하기" : "공개하기"}
         </Button>
       </div>
     </div>
@@ -200,7 +200,7 @@ function SaveIndicator({
   const label = {
     idle: "자동 저장 대기",
     saving: "저장 중…",
-    saved: "Draft 자동 저장됨",
+    saved: "비공개로 자동 저장됨",
     error: "저장 실패 — 네트워크를 확인해주세요",
   }[state];
   return (

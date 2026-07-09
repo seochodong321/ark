@@ -7,11 +7,13 @@ import {
   deleteSermon,
   fetchSermonsByAuthor,
   publishSermon,
+  setSermonStatus,
 } from "@/features/sermons/repositories/sermonRepository";
 import {
   deleteTestimony,
   fetchTestimoniesByAuthor,
   publishTestimony,
+  setTestimonyStatus,
 } from "@/features/testimonies/repositories/testimonyRepository";
 import { Badge } from "@/shared/components/ui/Badge";
 import { LoadMore } from "@/shared/components/ui/LoadMore";
@@ -36,9 +38,9 @@ const STATUS_BADGE: Record<
   ContentStatus,
   { label: string; tone: "neutral" | "accent" | "warning" }
 > = {
-  draft: { label: "Draft", tone: "warning" },
-  published: { label: "게시됨", tone: "accent" },
-  hidden: { label: "비공개", tone: "neutral" },
+  draft: { label: "비공개", tone: "neutral" },
+  published: { label: "공개", tone: "accent" },
+  hidden: { label: "숨김(관리자)", tone: "warning" },
 };
 
 export function ArchiveView() {
@@ -140,6 +142,7 @@ function SermonArchive({ user }: { user: User }) {
           publishedAt: item.publishedAt,
         })
       }
+      onUnpublish={(item) => setSermonStatus(item.id, "draft")}
       onDelete={(item) => deleteSermon(item.id)}
     />
   );
@@ -179,6 +182,7 @@ function TestimonyArchive({ user }: { user: User }) {
           publishedAt: item.publishedAt,
         })
       }
+      onUnpublish={(item) => setTestimonyStatus(item.id, "draft")}
       onDelete={(item) => deleteTestimony(item.id)}
     />
   );
@@ -196,6 +200,7 @@ interface ArchiveListProps<T extends ArchiveItem> {
   detailRoute: (id: string) => string;
   editRoute: (id: string) => string;
   onPublish: (item: T) => Promise<void>;
+  onUnpublish: (item: T) => Promise<void>;
   onDelete: (item: T) => Promise<void>;
 }
 
@@ -211,6 +216,7 @@ function ArchiveList<T extends ArchiveItem>({
   detailRoute,
   editRoute,
   onPublish,
+  onUnpublish,
   onDelete,
 }: ArchiveListProps<T>) {
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -226,6 +232,23 @@ function ArchiveList<T extends ArchiveItem>({
     setBusyId(item.id);
     try {
       await onPublish(item);
+      onReload();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleUnpublish = async (item: T) => {
+    if (
+      busyId ||
+      !window.confirm(
+        "비공개로 전환할까요? 다른 사람에게 더 이상 보이지 않습니다.",
+      )
+    )
+      return;
+    setBusyId(item.id);
+    try {
+      await onUnpublish(item);
       onReload();
     } finally {
       setBusyId(null);
@@ -274,7 +297,17 @@ function ArchiveList<T extends ArchiveItem>({
                     onClick={() => handlePublish(item)}
                     className="rounded-lg bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-strong disabled:opacity-50"
                   >
-                    게시
+                    공개
+                  </button>
+                )}
+                {item.status === "published" && (
+                  <button
+                    type="button"
+                    disabled={busyId === item.id}
+                    onClick={() => handleUnpublish(item)}
+                    className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink-soft hover:border-ink hover:text-ink disabled:opacity-50"
+                  >
+                    비공개 전환
                   </button>
                 )}
                 <Link

@@ -110,8 +110,8 @@ export function TestimonyDetailView({ id }: { id: string }) {
       {testimony.status !== "published" && (
         <div className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {testimony.status === "draft"
-            ? "Draft — 게시 전에는 본인만 볼 수 있습니다."
-            : "비공개 처리된 간증입니다."}
+            ? "비공개 — 나만 볼 수 있는 기록입니다."
+            : "관리자에 의해 숨김 처리된 간증입니다."}
         </div>
       )}
 
