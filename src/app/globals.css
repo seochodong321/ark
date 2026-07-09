@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  /* 종이 질감의 따뜻한 배경 — 텍스트 중심 읽기 경험 */
+  --color-paper: #faf9f6;
+  --color-paper-warm: #f4f1ea;
+
+  /* 본문 잉크 */
+  --color-ink: #211d19;
+  --color-ink-soft: #57534e;
+  --color-ink-faint: #a8a29e;
+
+  /* ARK 액센트 — 깊고 차분한 상록수 톤 */
+  --color-accent: #2f5240;
+  --color-accent-strong: #24402f;
+  --color-accent-soft: #e8efe9;
+
+  --color-line: #e7e3db;
+
+  --font-sans: var(--font-noto-sans), "Apple SD Gothic Neo", sans-serif;
+  --font-serif: var(--font-noto-serif), "Apple SD Gothic Neo", Georgia, serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 설교/간증 본문 읽기 스타일 (Markdown 렌더링) */
+.article-body {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 2;
+  color: var(--color-ink);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.article-body > * + * {
+  margin-top: 1.25em;
+}
+
+.article-body h1,
+.article-body h2,
+.article-body h3,
+.article-body h4 {
+  font-weight: 700;
+  line-height: 1.5;
+  margin-top: 2em;
+}
+
+.article-body h1 {
+  font-size: 1.5em;
+}
+.article-body h2 {
+  font-size: 1.3em;
+}
+.article-body h3 {
+  font-size: 1.15em;
+}
+
+.article-body blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1.25rem;
+  color: var(--color-ink-soft);
+  font-style: normal;
+}
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.5rem;
+}
+
+.article-body ul {
+  list-style: disc;
+}
+.article-body ol {
+  list-style: decimal;
+}
+.article-body li + li {
+  margin-top: 0.5em;
+}
+
+.article-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-body code {
+  background: var(--color-paper-warm);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.9em;
+}
+
+.article-body pre {
+  background: var(--color-paper-warm);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.article-body hr {
+  border: none;
+  text-align: center;
+  margin: 2.5em 0;
+}
+
+.article-body hr::after {
+  content: "※";
+  color: var(--color-ink-faint);
+}
+
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.article-body th,
+.article-body td {
+  border: 1px solid var(--color-line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}

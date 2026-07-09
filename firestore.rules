@@ -1,0 +1,134 @@
+rules_version = '2';
+
+// ARK Firestore 보안 규칙 (MVP)
+//
+// 알려진 한계: 씨앗 잔액/거래가 클라이언트 SDK 트랜잭션으로 처리되므로
+// 악의적 클라이언트가 자신의 잔액을 조작할 수 있다. 씨앗은 금전 가치가
+// 없는 활동 포인트이므로 MVP에서는 허용하고, 향후 Cloud Functions로
+// 씨앗 로직을 이전해 무결성을 강화한다. (README 향후 확장 계획 참고)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
+    }
+
+    function isPastor() {
+      return isSignedIn() && (userRole() == 'pastor' || userRole() == 'admin');
+    }
+
+    function isOwner() {
+      return isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    // 조회수·응원·댓글 수 카운터만 변경하는 업데이트인지 검사
+    function isCounterOnlyUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['viewCount', 'seedCount', 'commentCount']);
+    }
+
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if isSelf(uid)
+        && request.resource.data.role in ['member', 'pastorPending'];
+      // 본인은 role을 변경할 수 없다 (승격은 관리자만)
+      allow update: if isAdmin()
+        || (isSelf(uid) && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /usernames/{username} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /pastors/{uid} {
+      allow read: if true;
+      // 신청서 작성/재신청은 본인, 승인·반려는 관리자
+      allow create: if isSelf(uid)
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin()
+        || (isSelf(uid) && request.resource.data.status == 'pending');
+      allow delete: if isAdmin();
+    }
+
+    match /sermons/{id} {
+      allow read: if resource.data.status == 'published'
+        || isOwner() || isAdmin();
+      allow create: if isPastor()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'draft';
+      allow update: if isOwner() || isAdmin() || isCounterOnlyUpdate();
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /testimonies/{id} {
+      allow read: if resource.data.status == 'published'
+        || isOwner() || isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'draft';
+      allow update: if isOwner() || isAdmin() || isCounterOnlyUpdate();
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if isOwner();
+      allow delete: if isOwner() || isAdmin();
+    }
+
+    match /bookmarks/{id} {
+      allow read, delete: if isSignedIn()
+        && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    match /reports/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'pending';
+    }
+
+    match /seedTransactions/{id} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isAdmin()
+        || (isSignedIn() && request.resource.data.uid == request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    match /notifications/{id} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isAdmin();
+      // 읽음 표시만 본인이 변경 가능
+      allow update: if isSignedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

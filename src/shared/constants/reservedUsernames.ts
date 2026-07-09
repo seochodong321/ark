@@ -1,0 +1,32 @@
+/**
+ * Username으로 사용할 수 없는 예약어.
+ * 최상위 라우트(/[username])와 충돌하거나 사칭 위험이 있는 이름.
+ */
+export const RESERVED_USERNAMES = new Set([
+  "admin",
+  "administrator",
+  "ark",
+  "api",
+  "login",
+  "logout",
+  "signup",
+  "search",
+  "sermons",
+  "sermon",
+  "testimonies",
+  "testimony",
+  "migration",
+  "archive",
+  "bookmarks",
+  "seeds",
+  "pastor",
+  "pastors",
+  "settings",
+  "notifications",
+  "help",
+  "about",
+  "terms",
+  "privacy",
+  "official",
+  "support",
+]);
