@@ -1,6 +1,8 @@
 # ARK
 
 > **신앙의 기록을 보존하는 디지털 아카이브**
+>
+> 🌐 서비스: https://ark-ochre.vercel.app
 
 이 문서는 ARK 프로젝트의 **Single Source of Truth**입니다.
 기능이나 구조가 변경되면 이 문서를 함께 수정합니다. README와 실제 구현은 항상 일치해야 합니다.
@@ -208,11 +210,17 @@ src/
 - [x] 관리자 — 승인/신고/콘텐츠/씨앗/큐레이션
 - [x] Firestore 보안 규칙, 복합 인덱스, Storage 규칙
 
-### 출시 전 체크리스트
-- [ ] Firebase 프로젝트 생성 및 `.env.local` 구성
-- [ ] `firebase deploy --only firestore:rules,firestore:indexes,storage` 로 규칙/인덱스 배포
-- [ ] 관리자 계정 role 수동 부여
-- [ ] Vercel 배포 및 환경 변수 설정
+### 출시 체크리스트
+- [x] Firebase 프로젝트 생성(`ark-69e99`) 및 `.env.local` 구성
+- [x] `firebase deploy --only firestore:rules,firestore:indexes,storage` 로 규칙/인덱스 배포
+- [x] 관리자 계정 role 수동 부여
+- [x] Vercel 배포(https://ark-ochre.vercel.app) 및 환경 변수 설정
+- [x] Firebase Authentication 승인된 도메인에 Vercel 도메인 추가
+
+### 다음 단계
+- [ ] 프로덕션 환경에서 로그인·업로드 전체 흐름 QA (목회자 가입 → 인증 → Migration → 게시 → 검색)
+- [ ] 개인정보처리방침·이용약관 페이지 (목회자 인증에서 개인정보 수집)
+- [ ] 첫 실사용 목회자 온보딩 및 큐레이션 구성
 
 ## 9. 실행 방법
 
