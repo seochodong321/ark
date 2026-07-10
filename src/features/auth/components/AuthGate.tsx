@@ -41,7 +41,7 @@ export function AuthGate({ require = "user", children }: AuthGateProps) {
     if (require === "pastor") {
       return (
         <EmptyState
-          title="설교 보관은 인증된 목회자만 가능합니다"
+          title="인증된 목회자만 이용할 수 있는 기능입니다"
           description="신뢰할 수 있는 아카이브를 위해 목회자 인증을 거칩니다."
           action={
             <Link

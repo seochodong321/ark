@@ -10,6 +10,7 @@ export const COLLECTIONS = {
   bookmarks: "bookmarks",
   reports: "reports",
   seedTransactions: "seedTransactions",
+  jobs: "jobs",
   notifications: "notifications",
   settings: "settings",
 } as const;

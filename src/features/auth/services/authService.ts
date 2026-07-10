@@ -1,6 +1,10 @@
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
+  sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -74,8 +78,26 @@ export async function signup(params: SignupParams): Promise<void> {
   }
 }
 
-export async function login(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+/**
+ * 로그인.
+ * @param keepSignedIn true(기본)면 브라우저를 닫아도 로그인 유지(자동 로그인),
+ *                     false면 탭 세션 동안만 유지된다.
+ */
+export async function login(
+  email: string,
+  password: string,
+  keepSignedIn = true,
+): Promise<void> {
+  const auth = getFirebaseAuth();
+  await setPersistence(
+    auth,
+    keepSignedIn ? browserLocalPersistence : browserSessionPersistence,
+  );
+  await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(getFirebaseAuth(), email);
 }
 
 export async function logout(): Promise<void> {

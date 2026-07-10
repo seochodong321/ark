@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/components/ui/Button";
@@ -9,6 +9,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import type { SignupRole } from "@/shared/types";
 import { toUserMessage } from "@/shared/utils/errors";
 import { cn } from "@/shared/utils/cn";
+import { useAuth } from "../hooks/AuthProvider";
 import { signup, validateUsername } from "../services/authService";
 
 const ROLE_OPTIONS: Array<{
@@ -30,6 +31,7 @@ const ROLE_OPTIONS: Array<{
 
 export function SignupForm() {
   const router = useRouter();
+  const { user: currentUser, initializing } = useAuth();
   const [role, setRole] = useState<SignupRole>("member");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -38,8 +40,27 @@ export function SignupForm() {
   const [bio, setBio] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [agreements, setAgreements] = useState({
+    age14: false,
+    terms: false,
+    privacy: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const allAgreed = agreements.age14 && agreements.terms && agreements.privacy;
+
+  // 이미 로그인된 상태면 홈으로
+  useEffect(() => {
+    if (!initializing && currentUser && !submitting) {
+      router.replace(ROUTES.home);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initializing, currentUser]);
+
+  const toggleAll = (checked: boolean) => {
+    setAgreements({ age14: checked, terms: checked, privacy: checked });
+  };
 
   const handleUsernameChange = (value: string) => {
     const normalized = value.toLowerCase();
@@ -149,13 +170,44 @@ export function SignupForm() {
         />
       </Field>
 
+      <fieldset className="rounded-xl border border-line bg-white p-4">
+        <label className="flex items-center gap-2.5 border-b border-line pb-3 text-sm font-semibold text-ink">
+          <input
+            type="checkbox"
+            checked={allAgreed}
+            onChange={(e) => toggleAll(e.target.checked)}
+            className="size-4 accent-accent"
+          />
+          전체 동의
+        </label>
+        <div className="mt-3 space-y-2.5">
+          <ConsentRow
+            checked={agreements.age14}
+            onChange={(v) => setAgreements((a) => ({ ...a, age14: v }))}
+            label="만 14세 이상입니다"
+          />
+          <ConsentRow
+            checked={agreements.terms}
+            onChange={(v) => setAgreements((a) => ({ ...a, terms: v }))}
+            label="이용약관 동의"
+            href={ROUTES.terms}
+          />
+          <ConsentRow
+            checked={agreements.privacy}
+            onChange={(v) => setAgreements((a) => ({ ...a, privacy: v }))}
+            label="개인정보 수집·이용 동의"
+            href={ROUTES.privacy}
+          />
+        </div>
+      </fieldset>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Button
         type="submit"
         size="lg"
         loading={submitting}
-        disabled={Boolean(usernameError)}
+        disabled={Boolean(usernameError) || !allAgreed}
         className="w-full"
       >
         {role === "pastor" ? "가입하고 목회자 인증 신청하기" : "가입하기"}
@@ -168,5 +220,43 @@ export function SignupForm() {
         </Link>
       </p>
     </form>
+  );
+}
+
+function ConsentRow({
+  checked,
+  onChange,
+  label,
+  href,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  href?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <label className="flex items-center gap-2.5 text-sm text-ink-soft">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="size-4 accent-accent"
+        />
+        <span>
+          <span className="mr-1 text-xs font-medium text-accent">[필수]</span>
+          {label}
+        </span>
+      </label>
+      {href && (
+        <Link
+          href={href}
+          target="_blank"
+          className="shrink-0 text-xs text-ink-faint underline underline-offset-2 hover:text-ink"
+        >
+          보기
+        </Link>
+      )}
+    </div>
   );
 }

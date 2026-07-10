@@ -35,6 +35,7 @@ export function PastorApplyForm() {
   const [ministryFieldsRaw, setMinistryFieldsRaw] = useState("");
   const [introduction, setIntroduction] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -208,9 +209,36 @@ export function PastorApplyForm() {
         />
       </Field>
 
+      <label className="flex items-start gap-2.5 rounded-xl border border-line bg-white p-4 text-sm text-ink-soft">
+        <input
+          type="checkbox"
+          checked={privacyConsent}
+          onChange={(e) => setPrivacyConsent(e.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-accent"
+        />
+        <span>
+          <span className="mr-1 text-xs font-medium text-accent">[필수]</span>
+          인증 심사를 위한 개인정보(휴대전화·교회 정보 등) 수집·이용에
+          동의합니다.{" "}
+          <a
+            href={ROUTES.privacy}
+            target="_blank"
+            className="text-xs text-ink-faint underline underline-offset-2 hover:text-ink"
+          >
+            개인정보처리방침 보기
+          </a>
+        </span>
+      </label>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <Button type="submit" size="lg" loading={submitting} className="w-full">
+      <Button
+        type="submit"
+        size="lg"
+        loading={submitting}
+        disabled={!privacyConsent}
+        className="w-full"
+      >
         인증 신청하기
       </Button>
     </form>

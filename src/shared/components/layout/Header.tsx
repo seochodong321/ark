@@ -12,6 +12,7 @@ import { canWriteSermon, isAdmin } from "@/shared/types";
 const NAV_ITEMS = [
   { href: ROUTES.sermons, label: "설교" },
   { href: ROUTES.testimonies, label: "간증" },
+  { href: ROUTES.jobs, label: "채용" },
   { href: ROUTES.search, label: "검색" },
 ];
 

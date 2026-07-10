@@ -3,6 +3,11 @@ import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import { AuthProvider } from "@/features/auth/hooks/AuthProvider";
 import { Footer } from "@/shared/components/layout/Footer";
 import { Header } from "@/shared/components/layout/Header";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/shared/constants/site";
 import "./globals.css";
 
 const notoSans = Noto_Sans_KR({
@@ -18,9 +23,16 @@ const notoSerif = Noto_Serif_KR({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "ARK — 신앙의 기록을 보존하는 디지털 아카이브",
-  description:
-    "당신의 설교는 이번 주만을 위한 말씀이 아닙니다. 다음 세대가 다시 찾을 기록입니다.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "ko_KR",
+    title: "ARK — 신앙의 기록을 보존하는 디지털 아카이브",
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

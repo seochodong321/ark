@@ -78,6 +78,7 @@ src/
 │   ├── seeds/ reports/
 │   ├── search/ curation/
 │   ├── bible/                #   성경 본문 인용 (참조 파서 + 개역한글 로더)
+│   ├── jobs/                 #   채용 게시판 (목회자 작성 · 전체 공개)
 │   ├── archive/ home/ admin/
 └── shared/                   # 공통 계층
     ├── components/ui/        # Button, Field, Modal, StateView, MarkdownView …
@@ -192,6 +193,25 @@ src/
 - 디자인: 에디토리얼 매거진 톤 — 세리프 디스플레이 타이포, 헤어라인 구분선,
   pill 버튼, 종이 질감 배경(#fcfbf8) + 상록수 액센트(#1e5a3d) + 금박 포인트(#a97e2f).
 
+### 채용 게시판 (jobs) — `/jobs`
+- **작성은 인증된 목회자만**, 열람은 누구나 (Firestore 규칙으로 강제).
+- 공고는 게시 즉시 공개. 항목: 제목, 교회명(목회자 프로필에서 자동 채움), 모집 직분·분야,
+  지역, 고용 형태, 상세 내용(Markdown), 지원 연락처(선택), 마감일(선택 — 없으면 충원 시까지).
+- 작성자는 마감 처리/재모집/수정/삭제 가능. 목록은 "모집 중 / 전체" 탭.
+
+### 회원·계정 기본기
+- **약관 동의**: 가입 시 [필수] 만 14세 이상·이용약관·개인정보 수집 동의 (전체 동의 지원),
+  동의 시각을 사용자 문서에 기록. 목회자 인증 신청에도 개인정보 수집 동의 필수.
+- **법적 문서**: `/terms`(이용약관), `/privacy`(개인정보처리방침 — Firebase/Vercel 처리 위탁
+  및 국외 이전 고지 포함). 시행일·문의처는 `shared/constants/site.ts`에서 관리.
+- **로그인 편의**: 아이디 저장(localStorage), 자동 로그인(Firebase persistence —
+  해제 시 세션 한정), 비밀번호 재설정 메일(계정 존재 여부 비노출).
+- 로그인 상태에서 로그인/가입 페이지 접근 시 홈으로 리다이렉트.
+
+### 사이트 기본기
+- 커스텀 404·오류 페이지, 파비콘(`app/icon.svg`), OpenGraph 메타데이터(`metadataBase`),
+  robots.txt(개인 영역 색인 제외)·sitemap.xml (`app/robots.ts`, `app/sitemap.ts`).
+
 ### 관리자 (admin) — `/admin`
 - 목회자 승인/반려, 신고 처리, 콘텐츠 관리(비공개/삭제), 씨앗 지급, 메인 큐레이션.
 - admin 권한은 Firebase Console에서 `users/{uid}.role = "admin"`으로 수동 부여.
@@ -209,6 +229,7 @@ src/
 | `bookmarks` | `{uid}_{type}_{id}` | uid, targetType, targetId, targetTitle, targetAuthorName |
 | `reports` | auto | targetType, targetId, targetTitle, reporterId, reason, detail, **status**(pending/resolved/dismissed), resolutionNote |
 | `seedTransactions` | auto | uid, amount(±), type(signup/sermonPublish/testimonyPublish/event/cheer/adminGrant), targetType, targetId, memo |
+| `jobs` | auto | authorId, authorName·authorUsername, title, churchName, position, region, employmentType, description, contactEmail, contactPhone, deadline, **status**(open/closed), viewCount |
 | `notifications` | auto | uid, type, message, linkUrl, read |
 | `settings` | curation | sermonIds[](노출 순서), headline |
 
@@ -225,6 +246,10 @@ src/
 - [x] 복사·붙여넣기 입력 — 설교 등록·Migration Wizard에서 파일 없이 텍스트로 보관
 - [x] 선택적 공개 메커니즘 — 기본 비공개, 개별 공개 선택, 아카이브에서 공개↔비공개 전환
 - [x] 성경 본문 자동 인용 — 개역한글(퍼블릭 도메인) 내장, 참조 파싱 후 인용 블록 렌더링
+- [x] 이용약관·개인정보처리방침 + 가입/목회자 인증 필수 동의
+- [x] 로그인 편의 — 아이디 저장, 자동 로그인, 비밀번호 재설정
+- [x] 사이트 기본기 — 404/오류 페이지, 파비콘, OG, robots/sitemap
+- [x] 채용 게시판 — 목회자 작성, 전체 공개, 마감 관리
 - [x] Migration Wizard (다중/ZIP → 분석 → Draft → 검토 → 일괄 게시 → 통계)
 - [x] 목회자 페이지(@username) — 프로필, 통계, 설교 탐색 필터
 - [x] 내 아카이브 (Draft 관리)
@@ -243,8 +268,8 @@ src/
 - [x] Firebase Authentication 승인된 도메인에 Vercel 도메인 추가
 
 ### 다음 단계
-- [ ] 프로덕션 환경에서 로그인·업로드 전체 흐름 QA (목회자 가입 → 인증 → Migration → 게시 → 검색)
-- [ ] 개인정보처리방침·이용약관 페이지 (목회자 인증에서 개인정보 수집)
+- [ ] 프로덕션 환경에서 로그인·업로드 전체 흐름 QA (목회자 가입 → 인증 → Migration → 공개 → 검색)
+- [x] 개인정보처리방침·이용약관 페이지 (목회자 인증에서 개인정보 수집)
 - [ ] 첫 실사용 목회자 온보딩 및 큐레이션 구성
 
 ## 9. 실행 방법

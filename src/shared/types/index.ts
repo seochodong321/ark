@@ -7,5 +7,6 @@ export * from "./comment";
 export * from "./bookmark";
 export * from "./report";
 export * from "./seed";
+export * from "./job";
 export * from "./notification";
 export * from "./settings";

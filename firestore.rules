@@ -130,5 +130,16 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // 채용 게시판 — 작성은 인증 목회자만, 열람은 누구나
+    match /jobs/{id} {
+      allow read: if true;
+      allow create: if isPastor()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'open';
+      allow update: if isOwner() || isAdmin()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount']));
+      allow delete: if isOwner() || isAdmin();
+    }
   }
 }
