@@ -177,9 +177,18 @@ src/
 - 문서 ID를 `{uid}_{targetType}_{targetId}`로 고정해 중복 방지.
 - 목록 화면용으로 제목/작성자 비정규화 저장 (추가 Read 없음).
 
-### 씨앗 (seeds) — 무료 활동 포인트
-- 획득: 회원가입 +10, 설교 등록 +5, 간증 등록 +3, 운영 이벤트(관리자 지급).
-- 사용: 설교/간증 응원 1개. 잔액 차감 + 콘텐츠 `seedCount` 증가 + 거래 기록을 **단일 트랜잭션**으로 처리.
+### 응원 씨앗 (seeds) — 활동 포인트 원장(ledger)
+- **원장 원칙**: 모든 증감은 `seedTransactions`에 기록을 남긴다 (잔액만 바꾸는 쓰기 금지).
+  거래에는 `kind`(cheer/support) 필드가 있어 향후 후원 씨앗이 같은 원장에 합류한다.
+- **획득**: 회원가입 +10, **매일 출석 +1**(로그인 후 첫 방문 시 자동, 사용자 문서의
+  `lastAttendanceDate`+결정적 거래 ID로 중복 차단), 설교 최초 공개 +5, 간증 최초 공개 +3,
+  **공유하기 +1**(기록당 1회 — 결정적 거래 ID `share-{uid}-{type}-{id}`로 차단), 운영 이벤트.
+- **사용(응원)**: 1씨앗으로 설교/간증 응원 → 콘텐츠 `seedCount` 증가. 잔액 차감 +
+  카운트 증가 + 거래 기록을 **단일 트랜잭션**으로 처리. 응원받은 기록은 홈의
+  "성도들이 응원한 기록" 섹션에 추천 노출된다.
+- **회수**: 보상받은 기록(공개 이력 존재)을 삭제하면 보상만큼 차감 —
+  본인 삭제·관리자 삭제·신고 처리 삭제 모두 동일. **음수 잔액을 허용**해
+  "공개→사용→삭제" 반복 채굴을 차단한다 (잔액이 0 미만이면 응원 불가).
 - 환전 불가. 정책 수치는 `shared/constants/seeds.ts`에서만 관리.
 
 ### 신고 (reports)
@@ -220,7 +229,7 @@ src/
 
 | 컬렉션 | 문서 ID | 핵심 필드 |
 | --- | --- | --- |
-| `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance, createdAt, updatedAt |
+| `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt |
 | `usernames` | username | uid — Username 유일성 보장용 매핑 |
 | `pastors` | uid | 신청서+프로필: churchName, denomination, position, phone, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
 | `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft=비공개·작성자 전용 / published=공개 / hidden=관리자 숨김), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |
@@ -228,7 +237,7 @@ src/
 | `comments` | auto | targetType, targetId, authorId, authorName, body, createdAt |
 | `bookmarks` | `{uid}_{type}_{id}` | uid, targetType, targetId, targetTitle, targetAuthorName |
 | `reports` | auto | targetType, targetId, targetTitle, reporterId, reason, detail, **status**(pending/resolved/dismissed), resolutionNote |
-| `seedTransactions` | auto | uid, amount(±), type(signup/sermonPublish/testimonyPublish/event/cheer/adminGrant), targetType, targetId, memo |
+| `seedTransactions` | auto 또는 결정적 ID(`attendance-…`, `share-…`) | uid, amount(±), type(signup/attendance/sermonPublish/testimonyPublish/share/event/cheer/contentDeleted/adminGrant), **kind**(cheer/support), targetType, targetId, memo |
 | `jobs` | auto | authorId, authorName·authorUsername, title, churchName, position, region, employmentType, description, contactEmail, contactPhone, deadline, **status**(open/closed), viewCount |
 | `notifications` | auto | uid, type, message, linkUrl, read |
 | `settings` | curation | sermonIds[](노출 순서), headline |
@@ -250,6 +259,8 @@ src/
 - [x] 로그인 편의 — 아이디 저장, 자동 로그인, 비밀번호 재설정
 - [x] 사이트 기본기 — 404/오류 페이지, 파비콘, OG, robots/sitemap
 - [x] 채용 게시판 — 목회자 작성, 전체 공개, 마감 관리
+- [x] 응원 씨앗 원장 정교화 — 매일 출석·공유 보상, 삭제 시 보상 회수(음수 잔액 허용),
+      kind 필드로 후원 씨앗 자리 예약, 응원받은 기록 홈 추천
 - [x] Migration Wizard (다중/ZIP → 분석 → Draft → 검토 → 일괄 게시 → 통계)
 - [x] 목회자 페이지(@username) — 프로필, 통계, 설교 탐색 필터
 - [x] 내 아카이브 (Draft 관리)
@@ -305,7 +316,18 @@ npm run build      # 프로덕션 빌드
 1. **소셜 로그인** — `authService`에 provider 확장 지점 설계됨. 최초 로그인 시 username 선택 화면 추가.
 2. **Full-text Search** — `searchService`/`tokenizer` 구현만 교체 (Algolia, Meilisearch, Typesense).
 3. **씨앗 무결성 강화** — 씨앗 지급/차감 로직을 Cloud Functions로 이전 (현재는 클라이언트 트랜잭션, `firestore.rules` 주석 참고).
-4. **HWP 지원** — `documentParser`에 파서 추가만으로 확장 가능.
-5. **알림 UI** — `notifications` 컬렉션과 타입은 준비됨 (승인/반려 알림 저장 중).
-6. **RSC 데이터 페칭** — Firebase Admin SDK 도입 시 목록/상세를 Server Component로 이전해 SEO 강화.
-7. **후원/결제, 팔로우, 추천 알고리즘, 모바일 앱** — PRD 명시 제외 항목. 별도 의사결정 후 진행.
+4. **후원 씨앗 (설계 예약됨)** — 유료 씨앗으로 창작자를 실제 후원하는 2단계 기능.
+   - 구매: 1 후원 씨앗  = (비공개) (PG 결제) → 사용자 `비공개잔액` 충전
+   - 후원: 설교/간증에 후원 씨앗 전송 → 작성자 `비공개잔액` 적립
+   - 환전: 작성자가 환전 신청(`비공개정산` 컬렉션) → 관리자가 세금 처리 후
+     1씨앗  = (비공개)으로 정산·입금
+   - 원장은 이미 `kind: "support"`로 준비됨 (`shared/types/seed.ts`,
+     `shared/constants/seeds.ts`의 `SUPPORT_SEED` 참고).
+   - **선행 조건**: 실제 금전이 오가므로 결제 검증·잔액 변경·환전은 반드시
+     Cloud Functions(서버)로 처리하고, Firestore 규칙에서 클라이언트의
+     비공개잔액 직접 쓰기를 금지해야 한다. PG 계약(토스페이먼츠 등),
+     사업자 등록, 원천징수 세무 처리도 필요.
+5. **HWP 지원** — `documentParser`에 파서 추가만으로 확장 가능.
+6. **알림 UI** — `notifications` 컬렉션과 타입은 준비됨 (승인/반려 알림 저장 중).
+7. **RSC 데이터 페칭** — Firebase Admin SDK 도입 시 목록/상세를 Server Component로 이전해 SEO 강화.
+8. **팔로우, 추천 알고리즘, 모바일 앱** — PRD 명시 제외 항목. 별도 의사결정 후 진행.

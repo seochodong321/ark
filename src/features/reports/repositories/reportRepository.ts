@@ -2,7 +2,9 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
+  increment,
   limit,
   orderBy,
   query,
@@ -13,6 +15,7 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
+import { SEED_REWARD } from "@/shared/constants/seeds";
 import { getDb } from "@/shared/firebase/client";
 import { COLLECTIONS } from "@/shared/firebase/collections";
 import {
@@ -95,7 +98,7 @@ export type ReportAction = "hide" | "delete" | "dismiss";
 /**
  * 신고 처리. 콘텐츠 비공개/삭제와 신고 상태 변경을 원자적으로 수행한다.
  * - hide: 콘텐츠를 비공개(hidden) 처리
- * - delete: 콘텐츠 문서 삭제
+ * - delete: 콘텐츠 문서 삭제 + 공개 보상 회수
  * - dismiss: 신고 기각 (콘텐츠 유지)
  */
 export async function resolveReport(
@@ -116,7 +119,34 @@ export async function resolveReport(
       updatedAt: serverTimestamp(),
     });
   } else if (action === "delete") {
-    batch.delete(contentRef);
+    // 보상 회수 판단을 위해 삭제 전에 콘텐츠를 읽는다
+    const snap = await getDoc(contentRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const authorId = asString(data.authorId);
+      const wasPublished = toMillisOrNull(data.publishedAt) !== null;
+      if (authorId && wasPublished) {
+        const reward =
+          report.targetType === "sermon"
+            ? SEED_REWARD.sermonPublish
+            : SEED_REWARD.testimonyPublish;
+        batch.update(doc(db, COLLECTIONS.users, authorId), {
+          seedBalance: increment(-reward),
+          updatedAt: serverTimestamp(),
+        });
+        batch.set(doc(collection(db, COLLECTIONS.seedTransactions)), {
+          uid: authorId,
+          amount: -reward,
+          type: "contentDeleted",
+          kind: "cheer",
+          targetType: report.targetType,
+          targetId: report.targetId,
+          memo: `신고 처리 삭제 회수: ${report.targetTitle}`,
+          createdAt: serverTimestamp(),
+        });
+      }
+      batch.delete(contentRef);
+    }
   }
   batch.update(doc(db, COLLECTIONS.reports, report.id), {
     status: action === "dismiss" ? "dismissed" : "resolved",

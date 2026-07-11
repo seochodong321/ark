@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -127,9 +126,10 @@ export async function publishTestimony(
       uid: testimony.authorId,
       amount: SEED_REWARD.testimonyPublish,
       type: "testimonyPublish",
+      kind: "cheer",
       targetType: "testimony",
       targetId: testimony.id,
-      memo: `간증 등록: ${testimony.title}`,
+      memo: `간증 공개: ${testimony.title}`,
       createdAt: serverTimestamp(),
     });
   }
@@ -147,8 +147,33 @@ export async function incrementTestimonyView(id: string): Promise<void> {
   });
 }
 
-export async function deleteTestimony(id: string): Promise<void> {
-  await deleteDoc(doc(getDb(), COLLECTIONS.testimonies, id));
+/**
+ * 간증 삭제. 공개 이력이 있으면(보상을 받았으면) 공개 보상을 회수한다.
+ * 잔액이 부족해도 차감한다 — 음수 잔액을 허용해 보상 채굴을 막는다.
+ */
+export async function deleteTestimony(
+  testimony: Pick<Testimony, "id" | "authorId" | "title" | "publishedAt">,
+): Promise<void> {
+  const db = getDb();
+  const batch = writeBatch(db);
+  batch.delete(doc(db, COLLECTIONS.testimonies, testimony.id));
+  if (testimony.publishedAt !== null) {
+    batch.update(doc(db, COLLECTIONS.users, testimony.authorId), {
+      seedBalance: increment(-SEED_REWARD.testimonyPublish),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(collection(db, COLLECTIONS.seedTransactions)), {
+      uid: testimony.authorId,
+      amount: -SEED_REWARD.testimonyPublish,
+      type: "contentDeleted",
+      kind: "cheer",
+      targetType: "testimony",
+      targetId: testimony.id,
+      memo: `간증 삭제 회수: ${testimony.title}`,
+      createdAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
 }
 
 export async function setTestimonyStatus(
@@ -179,6 +204,21 @@ export async function fetchPublishedTestimonies(
     query(collection(getDb(), COLLECTIONS.testimonies), ...constraints),
   );
   return buildPage(snap.docs, pageSize, mapDoc);
+}
+
+/** 응원(씨앗)을 많이 받은 간증 — 홈 추천 분류용 */
+export async function fetchMostCheeredTestimonies(
+  count = 5,
+): Promise<Testimony[]> {
+  const snap = await getDocs(
+    query(
+      collection(getDb(), COLLECTIONS.testimonies),
+      where("status", "==", "published"),
+      orderBy("seedCount", "desc"),
+      limit(count),
+    ),
+  );
+  return snap.docs.map(mapDoc).filter((t) => t.seedCount > 0);
 }
 
 /** 관리자 콘텐츠 관리 — 상태 무관 전체 간증 최신 수정순 */

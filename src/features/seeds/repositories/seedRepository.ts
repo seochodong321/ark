@@ -27,11 +27,14 @@ import {
   type Page,
   type PageCursor,
 } from "@/shared/firebase/pagination";
-import { CHEER_COST } from "@/shared/constants/seeds";
+import { CHEER_COST, SEED_REWARD } from "@/shared/constants/seeds";
+import { todayString } from "@/shared/utils/date";
 import type {
   ContentType,
+  SeedKind,
   SeedTransaction,
   SeedTransactionType,
+  User,
 } from "@/shared/types";
 
 function mapTransaction(
@@ -43,6 +46,7 @@ function mapTransaction(
     uid: asString(data.uid),
     amount: asNumber(data.amount),
     type: asString(data.type, "event") as SeedTransactionType,
+    kind: asString(data.kind, "cheer") as SeedKind,
     targetType: asStringOrNull(data.targetType) as ContentType | null,
     targetId: asStringOrNull(data.targetId),
     memo: asString(data.memo),
@@ -71,11 +75,84 @@ export async function grantSeeds(params: GrantSeedsParams): Promise<void> {
       uid: params.uid,
       amount: params.amount,
       type: params.type,
+      kind: "cheer",
       targetType: params.targetType ?? null,
       targetId: params.targetId ?? null,
       memo: params.memo,
       createdAt: serverTimestamp(),
     });
+  });
+}
+
+/**
+ * 매일 출석 보상. 하루 한 번, 로그인 후 첫 방문 시 자동 지급된다.
+ * 사용자 문서의 lastAttendanceDate와 결정적 거래 ID로 중복을 차단한다.
+ * @returns 보상이 지급되었으면 true
+ */
+export async function claimDailyAttendance(user: User): Promise<boolean> {
+  const today = todayString();
+  if (user.lastAttendanceDate === today) return false;
+  const db = getDb();
+  return runTransaction(db, async (tx) => {
+    const userRef = doc(db, COLLECTIONS.users, user.uid);
+    const snap = await tx.get(userRef);
+    if (snap.data()?.lastAttendanceDate === today) return false;
+    tx.update(userRef, {
+      seedBalance: increment(SEED_REWARD.attendance),
+      lastAttendanceDate: today,
+      updatedAt: serverTimestamp(),
+    });
+    tx.set(
+      doc(db, COLLECTIONS.seedTransactions, `attendance-${user.uid}-${today}`),
+      {
+        uid: user.uid,
+        amount: SEED_REWARD.attendance,
+        type: "attendance",
+        kind: "cheer",
+        targetType: null,
+        targetId: null,
+        memo: `매일 출석 (${today})`,
+        createdAt: serverTimestamp(),
+      },
+    );
+    return true;
+  });
+}
+
+/**
+ * 공유하기 보상. 같은 기록은 한 번만 보상한다 (결정적 거래 ID로 차단).
+ * @returns 보상이 지급되었으면 true
+ */
+export async function grantShareReward(params: {
+  uid: string;
+  targetType: ContentType;
+  targetId: string;
+  targetTitle: string;
+}): Promise<boolean> {
+  const db = getDb();
+  const txRef = doc(
+    db,
+    COLLECTIONS.seedTransactions,
+    `share-${params.uid}-${params.targetType}-${params.targetId}`,
+  );
+  return runTransaction(db, async (tx) => {
+    const existing = await tx.get(txRef);
+    if (existing.exists()) return false;
+    tx.update(doc(db, COLLECTIONS.users, params.uid), {
+      seedBalance: increment(SEED_REWARD.share),
+      updatedAt: serverTimestamp(),
+    });
+    tx.set(txRef, {
+      uid: params.uid,
+      amount: SEED_REWARD.share,
+      type: "share",
+      kind: "cheer",
+      targetType: params.targetType,
+      targetId: params.targetId,
+      memo: `공유: ${params.targetTitle}`,
+      createdAt: serverTimestamp(),
+    });
+    return true;
   });
 }
 
@@ -100,7 +177,9 @@ export async function cheerContent(params: {
     const userSnap = await tx.get(userRef);
     const balance = asNumber(userSnap.data()?.seedBalance);
     if (balance < CHEER_COST) {
-      throw new Error("씨앗이 부족합니다. 설교나 간증을 기록하고 씨앗을 모아보세요.");
+      throw new Error(
+        "응원 씨앗이 부족합니다. 출석·기록·공유로 씨앗을 모아보세요.",
+      );
     }
     tx.update(userRef, {
       seedBalance: increment(-CHEER_COST),
@@ -114,6 +193,7 @@ export async function cheerContent(params: {
       uid: params.uid,
       amount: -CHEER_COST,
       type: "cheer",
+      kind: "cheer",
       targetType: params.targetType,
       targetId: params.targetId,
       memo: `응원: ${params.targetTitle}`,

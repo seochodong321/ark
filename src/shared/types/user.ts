@@ -19,7 +19,10 @@ export interface User {
   photoUrl: string | null;
   bio: string | null;
   role: UserRole;
+  /** 응원 씨앗 잔액. 삭제 회수로 음수가 될 수 있다 (0 미만이면 응원 불가) */
   seedBalance: number;
+  /** 마지막 출석 보상일 (YYYY-MM-DD) */
+  lastAttendanceDate: string | null;
   createdAt: number;
   updatedAt: number;
 }

@@ -5,12 +5,16 @@ import Link from "next/link";
 import { fetchCuration } from "@/features/curation/repositories/curationRepository";
 import { SermonCard } from "@/features/sermons/components/SermonCard";
 import {
+  fetchMostCheeredSermons,
   fetchPopularSermons,
   fetchPublishedSermons,
   fetchSermonsByIds,
 } from "@/features/sermons/repositories/sermonRepository";
 import { TestimonyCard } from "@/features/testimonies/components/TestimonyCard";
-import { fetchPublishedTestimonies } from "@/features/testimonies/repositories/testimonyRepository";
+import {
+  fetchMostCheeredTestimonies,
+  fetchPublishedTestimonies,
+} from "@/features/testimonies/repositories/testimonyRepository";
 import {
   EmptyState,
   ErrorState,
@@ -19,12 +23,22 @@ import {
 import { ROUTES } from "@/shared/constants/routes";
 import type { Sermon, Testimony } from "@/shared/types";
 
+/** 응원받은 기록 — 설교·간증 통합 목록 항목 */
+interface CheeredItem {
+  id: string;
+  title: string;
+  authorName: string;
+  seedCount: number;
+  href: string;
+}
+
 interface HomeData {
   latestSermons: Sermon[];
   curatedSermons: Sermon[];
   curationHeadline: string;
   latestTestimonies: Testimony[];
   popularSermons: Sermon[];
+  cheeredItems: CheeredItem[];
 }
 
 type ViewState =
@@ -33,22 +47,50 @@ type ViewState =
   | { phase: "ready"; data: HomeData };
 
 async function loadHomeData(): Promise<HomeData> {
-  const [latestPage, curation, testimonyPage, popularSermons] =
-    await Promise.all([
-      fetchPublishedSermons(null, 5),
-      fetchCuration(),
-      fetchPublishedTestimonies(null, 4),
-      fetchPopularSermons(5),
-    ]);
+  const [
+    latestPage,
+    curation,
+    testimonyPage,
+    popularSermons,
+    cheeredSermons,
+    cheeredTestimonies,
+  ] = await Promise.all([
+    fetchPublishedSermons(null, 5),
+    fetchCuration(),
+    fetchPublishedTestimonies(null, 4),
+    fetchPopularSermons(5),
+    fetchMostCheeredSermons(5),
+    fetchMostCheeredTestimonies(5),
+  ]);
   const curatedSermons = curation
     ? await fetchSermonsByIds(curation.sermonIds.slice(0, 5))
     : [];
+  // 설교·간증을 응원 수 기준으로 통합해 상위 5개만 추천한다
+  const cheeredItems: CheeredItem[] = [
+    ...cheeredSermons.map((s) => ({
+      id: s.id,
+      title: s.title,
+      authorName: s.authorName,
+      seedCount: s.seedCount,
+      href: ROUTES.sermonDetail(s.id),
+    })),
+    ...cheeredTestimonies.map((t) => ({
+      id: t.id,
+      title: t.title,
+      authorName: t.authorName,
+      seedCount: t.seedCount,
+      href: ROUTES.testimonyDetail(t.id),
+    })),
+  ]
+    .sort((a, b) => b.seedCount - a.seedCount)
+    .slice(0, 5);
   return {
     latestSermons: latestPage.items,
     curatedSermons,
     curationHeadline: curation?.headline ?? "",
     latestTestimonies: testimonyPage.items,
     popularSermons,
+    cheeredItems,
   };
 }
 
@@ -134,36 +176,66 @@ export function HomeSections() {
       </div>
 
       <aside>
-        {data.popularSermons.length > 0 && (
-          <div className="lg:sticky lg:top-24">
-            <h2 className="border-b-2 border-ink pb-3 font-serif text-base font-bold text-ink">
-              많이 읽힌 기록
-            </h2>
-            <ol className="divide-y divide-line">
-              {data.popularSermons.map((sermon, i) => (
-                <li key={sermon.id}>
-                  <Link
-                    href={ROUTES.sermonDetail(sermon.id)}
-                    className="group flex gap-4 py-4"
-                  >
-                    <span className="font-serif text-lg font-bold leading-none text-gold">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-ink transition-colors group-hover:text-accent">
-                        {sermon.title}
-                      </span>
-                      <span className="mt-1 block text-xs text-ink-faint">
-                        {sermon.authorName} · 조회 {sermon.viewCount}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
+        <div className="space-y-10 lg:sticky lg:top-24">
+          {data.cheeredItems.length > 0 && (
+            <RankedList
+              title="성도들이 응원한 기록"
+              items={data.cheeredItems.map((item) => ({
+                key: item.id,
+                href: item.href,
+                title: item.title,
+                meta: `${item.authorName} · 🌱 ${item.seedCount}`,
+              }))}
+            />
+          )}
+          {data.popularSermons.length > 0 && (
+            <RankedList
+              title="많이 읽힌 기록"
+              items={data.popularSermons.map((sermon) => ({
+                key: sermon.id,
+                href: ROUTES.sermonDetail(sermon.id),
+                title: sermon.title,
+                meta: `${sermon.authorName} · 조회 ${sermon.viewCount}`,
+              }))}
+            />
+          )}
+        </div>
       </aside>
+    </div>
+  );
+}
+
+function RankedList({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ key: string; href: string; title: string; meta: string }>;
+}) {
+  return (
+    <div>
+      <h2 className="border-b-2 border-ink pb-3 font-serif text-base font-bold text-ink">
+        {title}
+      </h2>
+      <ol className="divide-y divide-line">
+        {items.map((item, i) => (
+          <li key={item.key}>
+            <Link href={item.href} className="group flex gap-4 py-4">
+              <span className="font-serif text-lg font-bold leading-none text-gold">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-ink transition-colors group-hover:text-accent">
+                  {item.title}
+                </span>
+                <span className="mt-1 block text-xs text-ink-faint">
+                  {item.meta}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

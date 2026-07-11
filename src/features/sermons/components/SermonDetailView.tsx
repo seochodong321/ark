@@ -10,6 +10,7 @@ import { BookmarkButton } from "@/features/bookmarks/components/BookmarkButton";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { ReportButton } from "@/features/reports/components/ReportButton";
 import { CheerButton } from "@/features/seeds/components/CheerButton";
+import { ShareButton } from "@/features/seeds/components/ShareButton";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { MarkdownView } from "@/shared/components/ui/MarkdownView";
@@ -112,7 +113,7 @@ export function SermonDetailView({ id }: { id: string }) {
     }
     setBusy(true);
     try {
-      await deleteSermon(sermon.id);
+      await deleteSermon(sermon);
       router.push(ROUTES.archive);
     } finally {
       setBusy(false);
@@ -215,6 +216,11 @@ export function SermonDetailView({ id }: { id: string }) {
               targetId={sermon.id}
               targetTitle={sermon.title}
               targetAuthorName={sermon.authorName}
+            />
+            <ShareButton
+              targetType="sermon"
+              targetId={sermon.id}
+              targetTitle={sermon.title}
             />
             <ReportButton
               targetType="sermon"

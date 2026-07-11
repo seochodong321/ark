@@ -38,8 +38,10 @@ const STATUS_LABEL: Record<
 interface AdminContentItem {
   id: string;
   title: string;
+  authorId: string;
   authorName: string;
   status: ContentStatus;
+  publishedAt: number | null;
   updatedAt: number;
 }
 
@@ -97,7 +99,7 @@ function ContentList<T extends AdminContentItem>({
   }>;
   detailRoute: (id: string) => string;
   onSetStatus: (id: string, status: ContentStatus) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (item: T) => Promise<void>;
 }) {
   const fetcher = useCallback(
     (cursor: PageCursor) => fetchPage(cursor),
@@ -130,7 +132,7 @@ function ContentList<T extends AdminContentItem>({
       return;
     setBusyId(item.id);
     try {
-      await onDelete(item.id);
+      await onDelete(item);
       reload();
     } finally {
       setBusyId(null);

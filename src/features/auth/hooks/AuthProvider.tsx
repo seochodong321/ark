@@ -4,11 +4,13 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { Unsubscribe } from "firebase/firestore";
+import { claimDailyAttendance } from "@/features/seeds/repositories/seedRepository";
 import {
   getFirebaseAuth,
   isFirebaseConfigured,
@@ -57,6 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribeUser?.();
     };
   }, []);
+
+  // 매일 출석 보상 — 로그인 후 세션당 한 번만 시도한다
+  const attendanceUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const user = value.user;
+    if (!user || attendanceUidRef.current === user.uid) return;
+    attendanceUidRef.current = user.uid;
+    claimDailyAttendance(user).catch(() => undefined);
+  }, [value.user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

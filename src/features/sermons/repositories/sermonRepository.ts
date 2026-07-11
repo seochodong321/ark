@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   documentId,
   getCountFromServer,
@@ -201,9 +200,10 @@ export async function publishSermon(
       uid: sermon.authorId,
       amount: SEED_REWARD.sermonPublish,
       type: "sermonPublish",
+      kind: "cheer",
       targetType: "sermon",
       targetId: sermon.id,
-      memo: `설교 등록: ${sermon.title}`,
+      memo: `설교 공개: ${sermon.title}`,
       createdAt: serverTimestamp(),
     });
   }
@@ -228,9 +228,10 @@ export async function publishSermonsBulk(
         uid: authorId,
         amount: SEED_REWARD.sermonPublish,
         type: "sermonPublish",
+        kind: "cheer",
         targetType: "sermon",
         targetId: sermon.id,
-        memo: `설교 등록: ${sermon.title}`,
+        memo: `설교 공개: ${sermon.title}`,
         createdAt: serverTimestamp(),
       });
     }
@@ -253,8 +254,33 @@ export async function incrementSermonView(id: string): Promise<void> {
   });
 }
 
-export async function deleteSermon(id: string): Promise<void> {
-  await deleteDoc(doc(getDb(), COLLECTIONS.sermons, id));
+/**
+ * 설교 삭제. 공개 이력이 있으면(보상을 받았으면) 공개 보상을 회수한다.
+ * 잔액이 부족해도 차감한다 — 음수 잔액을 허용해 보상 채굴을 막는다.
+ */
+export async function deleteSermon(
+  sermon: Pick<Sermon, "id" | "authorId" | "title" | "publishedAt">,
+): Promise<void> {
+  const db = getDb();
+  const batch = writeBatch(db);
+  batch.delete(doc(db, COLLECTIONS.sermons, sermon.id));
+  if (sermon.publishedAt !== null) {
+    batch.update(doc(db, COLLECTIONS.users, sermon.authorId), {
+      seedBalance: increment(-SEED_REWARD.sermonPublish),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(collection(db, COLLECTIONS.seedTransactions)), {
+      uid: sermon.authorId,
+      amount: -SEED_REWARD.sermonPublish,
+      type: "contentDeleted",
+      kind: "cheer",
+      targetType: "sermon",
+      targetId: sermon.id,
+      memo: `설교 삭제 회수: ${sermon.title}`,
+      createdAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
 }
 
 export async function setSermonStatus(
@@ -299,6 +325,19 @@ export async function fetchPopularSermons(count = 5): Promise<Sermon[]> {
     ),
   );
   return snap.docs.map(mapDoc);
+}
+
+/** 응원(씨앗)을 많이 받은 설교 — 홈 추천 분류용 */
+export async function fetchMostCheeredSermons(count = 5): Promise<Sermon[]> {
+  const snap = await getDocs(
+    query(
+      collection(getDb(), COLLECTIONS.sermons),
+      where("status", "==", "published"),
+      orderBy("seedCount", "desc"),
+      limit(count),
+    ),
+  );
+  return snap.docs.map(mapDoc).filter((s) => s.seedCount > 0);
 }
 
 export type SermonSort = "latest" | "oldest";

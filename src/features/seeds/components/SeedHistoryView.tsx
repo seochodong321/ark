@@ -10,6 +10,7 @@ import {
 } from "@/shared/components/ui/StateView";
 import type { PageCursor } from "@/shared/firebase/pagination";
 import { usePagedList } from "@/shared/hooks/usePagedList";
+import { SEED_REWARD } from "@/shared/constants/seeds";
 import { SEED_TRANSACTION_LABEL, type User } from "@/shared/types";
 import { cn } from "@/shared/utils/cn";
 import { formatDateShort } from "@/shared/utils/date";
@@ -30,13 +31,18 @@ function SeedHistory({ user }: { user: User }) {
   return (
     <div>
       <div className="mb-8 rounded-xl bg-accent-soft p-6 text-center">
-        <p className="text-sm text-accent-strong">내 씨앗</p>
+        <p className="text-sm text-accent-strong">내 응원 씨앗</p>
         <p className="mt-1 font-serif text-3xl font-bold text-accent-strong">
           🌱 {user.seedBalance}
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-accent-strong/80">
-          씨앗은 기록 활동으로 얻는 응원 포인트입니다. 실제 돈으로 환전되지
-          않습니다.
+        <p className="mt-3 text-xs leading-relaxed text-accent-strong/80">
+          매일 출석 +{SEED_REWARD.attendance} · 설교 공개 +
+          {SEED_REWARD.sermonPublish} · 간증 공개 +
+          {SEED_REWARD.testimonyPublish} · 공유 +{SEED_REWARD.share}
+        </p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-accent-strong/70">
+          응원 씨앗은 마음에 남은 기록을 응원(추천)하는 데 쓰입니다. 환전되지
+          않으며, 보상받은 기록을 삭제하면 보상이 회수됩니다.
         </p>
       </div>
 

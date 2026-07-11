@@ -143,7 +143,7 @@ function SermonArchive({ user }: { user: User }) {
         })
       }
       onUnpublish={(item) => setSermonStatus(item.id, "draft")}
-      onDelete={(item) => deleteSermon(item.id)}
+      onDelete={(item) => deleteSermon(item)}
     />
   );
 }
@@ -183,7 +183,7 @@ function TestimonyArchive({ user }: { user: User }) {
         })
       }
       onUnpublish={(item) => setTestimonyStatus(item.id, "draft")}
-      onDelete={(item) => deleteTestimony(item.id)}
+      onDelete={(item) => deleteTestimony(item)}
     />
   );
 }

@@ -8,6 +8,7 @@ import { BookmarkButton } from "@/features/bookmarks/components/BookmarkButton";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { ReportButton } from "@/features/reports/components/ReportButton";
 import { CheerButton } from "@/features/seeds/components/CheerButton";
+import { ShareButton } from "@/features/seeds/components/ShareButton";
 import { Badge } from "@/shared/components/ui/Badge";
 import { MarkdownView } from "@/shared/components/ui/MarkdownView";
 import {
@@ -98,7 +99,7 @@ export function TestimonyDetailView({ id }: { id: string }) {
     }
     setBusy(true);
     try {
-      await deleteTestimony(testimony.id);
+      await deleteTestimony(testimony);
       router.push(ROUTES.archive);
     } finally {
       setBusy(false);
@@ -174,6 +175,11 @@ export function TestimonyDetailView({ id }: { id: string }) {
               targetId={testimony.id}
               targetTitle={testimony.title}
               targetAuthorName={testimony.authorName}
+            />
+            <ShareButton
+              targetType="testimony"
+              targetId={testimony.id}
+              targetTitle={testimony.title}
             />
             <ReportButton
               targetType="testimony"
