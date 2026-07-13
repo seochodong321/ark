@@ -79,6 +79,7 @@ src/
 │   ├── search/ curation/
 │   ├── bible/                #   성경 본문 인용 (참조 파서 + 개역한글 로더)
 │   ├── jobs/                 #   채용 게시판 (목회자 작성 · 전체 공개)
+│   ├── follows/              #   팔로우 (팔로워 수 · 홈 팔로잉 피드)
 │   ├── archive/ home/ admin/
 └── shared/                   # 공통 계층
     ├── components/ui/        # Button, Field, Modal, StateView, MarkdownView …
@@ -155,8 +156,19 @@ src/
 
 ### 목회자 페이지 (`/@username`)
 - 이름, 프로필, 소개, 교회, 직분, 교단, 사역 분야, **설교 개수, 사역 기간**(집계 쿼리로 계산).
+- **팔로워 수 + 팔로우 버튼** (본인에게는 버튼 숨김, 목회자 페이지에만 노출).
 - 설교 탐색: 최신순 / 오래된순 / 연도별 / 성경본문별 / 태그별.
-- 일반회원 페이지는 공개 간증 목록을 노출.
+- 일반회원 페이지는 공개 간증 목록을 노출. 카드·댓글의 작성자 이름은 모두 이 페이지로 연결.
+
+### 팔로우 (follows)
+- 성도가 목회자를 구독한다. `follows/{followerUid}_{pastorUid}` 결정적 ID로 중복 차단,
+  자기 자신 팔로우는 규칙에서 금지.
+- 팔로우/언팔로우 시 목회자의 `users.followerCount`를 같은 batch로 증감.
+  **팔로잉 수는 저장·표시하지 않는다** — 팔로워 수만 공개.
+- **홈 팔로잉 피드**: 로그인 + 팔로우가 있으면 홈 최상단에 "팔로우한 목회자의 새 설교"
+  섹션 노출 (최근 팔로우 30명까지, `authorId in` 청크 조회 후 최신순 병합).
+- 목회자 정보를 팔로우 문서에 비정규화 — 향후 "OO 목사님의 설교가 업로드되었어요"
+  이메일 알림은 이 컬렉션 조회만으로 발송 대상을 얻는다 (Cloud Functions + 메일 서비스 필요).
 
 ### 간증 (testimonies)
 - 일반회원이 Markdown 에디터로 작성 (작성/미리보기 탭).
@@ -229,7 +241,7 @@ src/
 
 | 컬렉션 | 문서 ID | 핵심 필드 |
 | --- | --- | --- |
-| `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt |
+| `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, followerCount, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt |
 | `usernames` | username | uid — Username 유일성 보장용 매핑 |
 | `pastors` | uid | 신청서+프로필: churchName, denomination, position, phone, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
 | `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft=비공개·작성자 전용 / published=공개 / hidden=관리자 숨김), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |
@@ -239,6 +251,7 @@ src/
 | `reports` | auto | targetType, targetId, targetTitle, reporterId, reason, detail, **status**(pending/resolved/dismissed), resolutionNote |
 | `seedTransactions` | auto 또는 결정적 ID(`attendance-…`, `share-…`) | uid, amount(±), type(signup/attendance/sermonPublish/testimonyPublish/share/event/cheer/contentDeleted/adminGrant), **kind**(cheer/support), targetType, targetId, memo |
 | `jobs` | auto | authorId, authorName·authorUsername, title, churchName, position, region, employmentType, description, contactEmail, contactPhone, deadline, **status**(open/closed), viewCount |
+| `follows` | `{followerUid}_{pastorUid}` | followerId, pastorId, pastorName·pastorUsername(비정규화 — 이메일 알림용), createdAt |
 | `notifications` | auto | uid, type, message, linkUrl, read |
 | `settings` | curation | sermonIds[](노출 순서), headline |
 
@@ -261,6 +274,7 @@ src/
 - [x] 채용 게시판 — 목회자 작성, 전체 공개, 마감 관리
 - [x] 응원 씨앗 원장 정교화 — 매일 출석·공유 보상, 삭제 시 보상 회수(음수 잔액 허용),
       kind 필드로 후원 씨앗 자리 예약, 응원받은 기록 홈 추천
+- [x] 팔로우 — 목회자 페이지 팔로워 수·팔로우 버튼, 홈 팔로잉 피드
 - [x] Migration Wizard (다중/ZIP → 분석 → Draft → 검토 → 일괄 게시 → 통계)
 - [x] 목회자 페이지(@username) — 프로필, 통계, 설교 탐색 필터
 - [x] 내 아카이브 (Draft 관리)
@@ -330,4 +344,8 @@ npm run build      # 프로덕션 빌드
 5. **HWP 지원** — `documentParser`에 파서 추가만으로 확장 가능.
 6. **알림 UI** — `notifications` 컬렉션과 타입은 준비됨 (승인/반려 알림 저장 중).
 7. **RSC 데이터 페칭** — Firebase Admin SDK 도입 시 목록/상세를 Server Component로 이전해 SEO 강화.
-8. **팔로우, 추천 알고리즘, 모바일 앱** — PRD 명시 제외 항목. 별도 의사결정 후 진행.
+8. **새 설교 이메일 알림** — Cloud Functions(설교 publish 트리거) + 메일 서비스(Resend 등)로
+   `follows`에서 발송 대상 조회 → "OO 목사님의 설교가 업로드되었어요" 발송. 수신 동의 필드 추가 필요.
+9. **홈 피드 탭** — 팔로잉 / 씨앗추천 / 조회순 / 최신순 탭 분리. 쿼리와 인덱스는 준비됨
+   (`fetchSermonsByAuthors`, `fetchMostCheeredSermons`, `fetchPopularSermons`, `fetchPublishedSermons`).
+10. **추천 알고리즘, 모바일 앱** — PRD 명시 제외 항목. 별도 의사결정 후 진행.

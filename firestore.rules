@@ -43,9 +43,12 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSelf(uid)
         && request.resource.data.role in ['member', 'pastorPending'];
-      // 본인은 role을 변경할 수 없다 (승격은 관리자만)
+      // 본인은 role을 변경할 수 없다 (승격은 관리자만).
+      // 팔로워 수는 다른 로그인 사용자가 팔로우/언팔로우할 때만 증감 가능.
       allow update: if isAdmin()
-        || (isSelf(uid) && request.resource.data.role == resource.data.role);
+        || (isSelf(uid) && request.resource.data.role == resource.data.role)
+        || (isSignedIn() && request.resource.data.diff(resource.data)
+              .affectedKeys().hasOnly(['followerCount']));
       allow delete: if isAdmin();
     }
 
@@ -129,6 +132,19 @@ service cloud.firestore {
     match /settings/{id} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // 팔로우 — 본인 명의로만 생성/삭제, 자기 자신 팔로우 금지
+    match /follows/{id} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.followerId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.pastorId != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.pastorId;
+      allow delete: if isSignedIn()
+        && resource.data.followerId == request.auth.uid;
+      allow update: if false;
     }
 
     // 채용 게시판 — 작성은 인증 목회자만, 열람은 누구나

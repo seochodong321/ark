@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchUserByUsername } from "@/features/auth/repositories/userRepository";
+import { FollowButton } from "@/features/follows/components/FollowButton";
 import { SermonExplorer } from "@/features/sermons/components/SermonExplorer";
 import { fetchAuthorSermonStats } from "@/features/sermons/repositories/sermonRepository";
 import { AuthorTestimonyList } from "@/features/testimonies/components/AuthorTestimonyList";
@@ -77,17 +78,29 @@ export function PastorPageView({ username }: { username: string }) {
   return (
     <div>
       <header className="mb-10">
-        <div className="flex items-start gap-5">
-          <Avatar name={user.name} photoUrl={user.photoUrl} size="lg" />
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-ink">{user.name}</h1>
-            <p className="text-sm text-ink-faint">@{user.username}</p>
-            {user.bio && (
-              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                {user.bio}
-              </p>
-            )}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-5">
+            <Avatar name={user.name} photoUrl={user.photoUrl} size="lg" />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-ink">{user.name}</h1>
+              <p className="text-sm text-ink-faint">@{user.username}</p>
+              {user.bio && (
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                  {user.bio}
+                </p>
+              )}
+            </div>
           </div>
+          {isPastor && (
+            <FollowButton
+              pastor={{
+                uid: user.uid,
+                name: user.name,
+                username: user.username,
+              }}
+              initialFollowerCount={user.followerCount}
+            />
+          )}
         </div>
 
         {pastor && pastor.status === "approved" && (

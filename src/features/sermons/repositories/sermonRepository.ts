@@ -327,6 +327,35 @@ export async function fetchPopularSermons(count = 5): Promise<Sermon[]> {
   return snap.docs.map(mapDoc);
 }
 
+/**
+ * 팔로우한 목회자들의 최신 공개 설교 — 홈 팔로잉 피드용.
+ * Firestore in 제한에 맞춰 10명씩 청크 조회 후 최신순으로 병합한다.
+ */
+export async function fetchSermonsByAuthors(
+  authorIds: string[],
+  count = 6,
+): Promise<Sermon[]> {
+  if (authorIds.length === 0) return [];
+  const db = getDb();
+  const chunks = await Promise.all(
+    chunk(authorIds, 10).map((group) =>
+      getDocs(
+        query(
+          collection(db, COLLECTIONS.sermons),
+          where("authorId", "in", group),
+          where("status", "==", "published"),
+          orderBy("publishedAt", "desc"),
+          limit(count),
+        ),
+      ),
+    ),
+  );
+  return chunks
+    .flatMap((snap) => snap.docs.map(mapDoc))
+    .sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0))
+    .slice(0, count);
+}
+
 /** 응원(씨앗)을 많이 받은 설교 — 홈 추천 분류용 */
 export async function fetchMostCheeredSermons(count = 5): Promise<Sermon[]> {
   const snap = await getDocs(

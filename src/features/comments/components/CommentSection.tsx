@@ -149,8 +149,15 @@ function CommentItem({
   return (
     <li>
       <div className="mb-1.5 flex items-center gap-2 text-xs text-ink-faint">
-        <span className="font-medium text-ink-soft">{comment.authorName}</span>
-        <span>@{comment.authorUsername}</span>
+        <Link
+          href={ROUTES.pastorPage(comment.authorUsername)}
+          className="font-medium text-ink-soft hover:text-accent"
+        >
+          {comment.authorName}
+          <span className="ml-1 font-normal text-ink-faint">
+            @{comment.authorUsername}
+          </span>
+        </Link>
         <span>·</span>
         <time>{formatDateShort(comment.createdAt)}</time>
       </div>

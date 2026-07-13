@@ -23,6 +23,8 @@ export interface User {
   seedBalance: number;
   /** 마지막 출석 보상일 (YYYY-MM-DD) */
   lastAttendanceDate: string | null;
+  /** 팔로워 수 — 팔로우/언팔로우와 원자적으로 증감 */
+  followerCount: number;
   createdAt: number;
   updatedAt: number;
 }

@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/features/auth/hooks/AuthProvider";
 import { fetchCuration } from "@/features/curation/repositories/curationRepository";
+import { fetchFollowedPastorIds } from "@/features/follows/repositories/followRepository";
 import { SermonCard } from "@/features/sermons/components/SermonCard";
 import {
   fetchMostCheeredSermons,
   fetchPopularSermons,
   fetchPublishedSermons,
+  fetchSermonsByAuthors,
   fetchSermonsByIds,
 } from "@/features/sermons/repositories/sermonRepository";
 import { TestimonyCard } from "@/features/testimonies/components/TestimonyCard";
@@ -33,6 +36,8 @@ interface CheeredItem {
 }
 
 interface HomeData {
+  /** 팔로우한 목회자의 최신 설교 — 로그인 + 팔로우가 있을 때만 */
+  followingSermons: Sermon[];
   latestSermons: Sermon[];
   curatedSermons: Sermon[];
   curationHeadline: string;
@@ -46,8 +51,15 @@ type ViewState =
   | { phase: "error" }
   | { phase: "ready"; data: HomeData };
 
-async function loadHomeData(): Promise<HomeData> {
+async function loadFollowingFeed(uid: string | null): Promise<Sermon[]> {
+  if (!uid) return [];
+  const pastorIds = await fetchFollowedPastorIds(uid);
+  return fetchSermonsByAuthors(pastorIds, 4);
+}
+
+async function loadHomeData(uid: string | null): Promise<HomeData> {
   const [
+    followingSermons,
     latestPage,
     curation,
     testimonyPage,
@@ -55,6 +67,7 @@ async function loadHomeData(): Promise<HomeData> {
     cheeredSermons,
     cheeredTestimonies,
   ] = await Promise.all([
+    loadFollowingFeed(uid).catch(() => []),
     fetchPublishedSermons(null, 5),
     fetchCuration(),
     fetchPublishedTestimonies(null, 4),
@@ -85,6 +98,7 @@ async function loadHomeData(): Promise<HomeData> {
     .sort((a, b) => b.seedCount - a.seedCount)
     .slice(0, 5);
   return {
+    followingSermons,
     latestSermons: latestPage.items,
     curatedSermons,
     curationHeadline: curation?.headline ?? "",
@@ -95,12 +109,14 @@ async function loadHomeData(): Promise<HomeData> {
 }
 
 export function HomeSections() {
+  const { user } = useAuth();
+  const uid = user?.uid ?? null;
   const [state, setState] = useState<ViewState>({ phase: "loading" });
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    loadHomeData()
+    loadHomeData(uid)
       .then((data) => {
         if (!cancelled) setState({ phase: "ready", data });
       })
@@ -110,7 +126,7 @@ export function HomeSections() {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [uid, reloadToken]);
 
   const load = () => {
     setState({ phase: "loading" });
@@ -146,6 +162,17 @@ export function HomeSections() {
   return (
     <div className="grid gap-14 lg:grid-cols-[1fr_300px]">
       <div className="min-w-0 space-y-16">
+        {data.followingSermons.length > 0 && (
+          <HomeSection
+            title="팔로우한 목회자의 새 설교"
+            subtitle="내가 구독하는 말씀의 기록"
+          >
+            {data.followingSermons.map((sermon) => (
+              <SermonCard key={sermon.id} sermon={sermon} />
+            ))}
+          </HomeSection>
+        )}
+
         {data.curatedSermons.length > 0 && (
           <HomeSection
             title="이번 주의 추천"
@@ -248,7 +275,7 @@ function HomeSection({
 }: {
   title: string;
   subtitle?: string;
-  moreHref: string;
+  moreHref?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -260,12 +287,14 @@ function HomeSection({
             <p className="mt-1 text-xs text-ink-faint">{subtitle}</p>
           )}
         </div>
-        <Link
-          href={moreHref}
-          className="shrink-0 text-xs font-medium text-ink-faint transition-colors hover:text-accent"
-        >
-          더 보기 →
-        </Link>
+        {moreHref && (
+          <Link
+            href={moreHref}
+            className="shrink-0 text-xs font-medium text-ink-faint transition-colors hover:text-accent"
+          >
+            더 보기 →
+          </Link>
+        )}
       </div>
       {children}
     </section>

@@ -35,6 +35,7 @@ function mapUser(uid: string, data: DocumentData): User {
     role: asString(data.role, "member") as UserRole,
     seedBalance: asNumber(data.seedBalance),
     lastAttendanceDate: asStringOrNull(data.lastAttendanceDate),
+    followerCount: asNumber(data.followerCount),
     createdAt: toMillis(data.createdAt),
     updatedAt: toMillis(data.updatedAt),
   };
@@ -118,6 +119,7 @@ export async function createUserProfile(
       role: params.role,
       seedBalance: SEED_REWARD.signup,
       lastAttendanceDate: null,
+      followerCount: 0,
       // 가입 시 필수 동의(이용약관·개인정보) 시각 기록
       termsAgreedAt: serverTimestamp(),
       privacyAgreedAt: serverTimestamp(),

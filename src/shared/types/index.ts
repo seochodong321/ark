@@ -8,5 +8,6 @@ export * from "./bookmark";
 export * from "./report";
 export * from "./seed";
 export * from "./job";
+export * from "./follow";
 export * from "./notification";
 export * from "./settings";
