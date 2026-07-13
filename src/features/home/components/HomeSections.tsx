@@ -23,6 +23,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@/shared/components/ui/StateView";
+import { SermonFeedTabs } from "./SermonFeedTabs";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Sermon, Testimony } from "@/shared/types";
 
@@ -54,7 +55,7 @@ type ViewState =
 async function loadFollowingFeed(uid: string | null): Promise<Sermon[]> {
   if (!uid) return [];
   const pastorIds = await fetchFollowedPastorIds(uid);
-  return fetchSermonsByAuthors(pastorIds, 4);
+  return fetchSermonsByAuthors(pastorIds, 8);
 }
 
 async function loadHomeData(uid: string | null): Promise<HomeData> {
@@ -68,7 +69,7 @@ async function loadHomeData(uid: string | null): Promise<HomeData> {
     cheeredTestimonies,
   ] = await Promise.all([
     loadFollowingFeed(uid).catch(() => []),
-    fetchPublishedSermons(null, 5),
+    fetchPublishedSermons(null, 8),
     fetchCuration(),
     fetchPublishedTestimonies(null, 4),
     fetchPopularSermons(5),
@@ -162,16 +163,14 @@ export function HomeSections() {
   return (
     <div className="grid gap-14 lg:grid-cols-[1fr_300px]">
       <div className="min-w-0 space-y-16">
-        {data.followingSermons.length > 0 && (
-          <HomeSection
-            title="팔로우한 목회자의 새 설교"
-            subtitle="내가 구독하는 말씀의 기록"
-          >
-            {data.followingSermons.map((sermon) => (
-              <SermonCard key={sermon.id} sermon={sermon} />
-            ))}
-          </HomeSection>
-        )}
+        <SermonFeedTabs
+          uid={uid}
+          initialTab={data.followingSermons.length > 0 ? "following" : "latest"}
+          preloaded={{
+            following: data.followingSermons,
+            latest: data.latestSermons,
+          }}
+        />
 
         {data.curatedSermons.length > 0 && (
           <HomeSection
@@ -180,14 +179,6 @@ export function HomeSections() {
             moreHref={ROUTES.sermons}
           >
             {data.curatedSermons.map((sermon) => (
-              <SermonCard key={sermon.id} sermon={sermon} />
-            ))}
-          </HomeSection>
-        )}
-
-        {data.latestSermons.length > 0 && (
-          <HomeSection title="새로 올라온 설교" moreHref={ROUTES.sermons}>
-            {data.latestSermons.map((sermon) => (
               <SermonCard key={sermon.id} sermon={sermon} />
             ))}
           </HomeSection>
