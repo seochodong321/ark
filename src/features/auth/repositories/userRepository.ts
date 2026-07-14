@@ -31,8 +31,9 @@ function mapUser(uid: string, data: DocumentData): User {
     name: asString(data.name),
     username: asString(data.username),
     // 이메일은 Firestore가 아닌 Firebase Auth에만 보관한다 (공개 노출 방지).
-    // 본인 문서는 AuthProvider가 Auth 토큰의 이메일로 채운다. 타인 조회 시 빈 값.
-    email: asString(data.email),
+    // 본인 문서는 AuthProvider가 Auth 토큰 값으로 채우고, 타인 조회 시엔 항상 빈 값.
+    // (레거시 문서에 email이 남아 있어도 객체로 전파하지 않는다.)
+    email: "",
     photoUrl: asStringOrNull(data.photoUrl),
     bio: asStringOrNull(data.bio),
     role: asString(data.role, "member") as UserRole,
