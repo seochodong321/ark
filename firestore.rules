@@ -6,10 +6,9 @@ rules_version = '2';
 // 클라이언트 SDK 트랜잭션으로 갱신되므로, 본인이 자기 문서의 seedBalance를
 // 임의로 늘릴 수 있다. 응원 씨앗은 금전 가치가 없는 활동 포인트이므로
 // 현재는 허용한다.
-// ⚠️ 후원 씨앗(실제 현금)은 절대 이 방식으로 두면 안 된다 — 반드시 서버
-//    (Next.js Route Handler + Firebase Admin SDK 또는 Cloud Functions)에서만
-//    잔액을 변경하고, 클라이언트의 잔액 필드 직접 쓰기를 규칙으로 금지해야 한다.
-//    (README 향후 확장 계획: 후원 씨앗 참고)
+// ⚠️ 금전 가치가 있는 잔액을 도입한다면 절대 이 방식으로 두면 안 된다 —
+//    반드시 서버(Admin SDK 또는 Cloud Functions)에서만 잔액을 변경하고,
+//    클라이언트의 유료 잔액 직접 쓰기를 규칙으로 금지해야 한다.
 service cloud.firestore {
   match /databases/{database}/documents {
 
