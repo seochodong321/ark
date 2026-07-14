@@ -49,8 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setValue({ user: null, initializing: false });
           return;
         }
+        // 이메일은 Firestore에 저장하지 않으므로 Auth 토큰 값으로 채운다
+        const authEmail = firebaseUser.email ?? "";
         unsubscribeUser = subscribeUser(firebaseUser.uid, (user) =>
-          setValue({ user, initializing: false }),
+          setValue({
+            user: user ? { ...user, email: authEmail } : null,
+            initializing: false,
+          }),
         );
       },
     );

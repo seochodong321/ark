@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   approvePastor,
   fetchApplicationsByStatus,
+  fetchPastorContact,
   rejectPastor,
 } from "@/features/pastors/repositories/pastorRepository";
 import { Avatar } from "@/shared/components/ui/Avatar";
@@ -16,7 +17,7 @@ import {
 } from "@/shared/components/ui/StateView";
 import type { PageCursor } from "@/shared/firebase/pagination";
 import { usePagedList } from "@/shared/hooks/usePagedList";
-import type { PastorProfile } from "@/shared/types";
+import type { PastorContact, PastorProfile } from "@/shared/types";
 import { formatDateShort } from "@/shared/utils/date";
 
 export function AdminPastorsView() {
@@ -57,6 +58,20 @@ function ApplicationCard({
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
+  const [contact, setContact] = useState<PastorContact | null>(null);
+
+  // 연락처는 비공개 서브문서 — 관리자만 조회 성공
+  useEffect(() => {
+    let cancelled = false;
+    fetchPastorContact(application.uid)
+      .then((c) => {
+        if (!cancelled) setContact(c);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [application.uid]);
 
   const handleApprove = async () => {
     if (busy || !window.confirm(`${application.name} 님을 목회자로 승인할까요?`))
@@ -103,7 +118,7 @@ function ApplicationCard({
             {application.denomination}
           </p>
           <p className="mt-0.5 text-xs text-ink-faint">
-            {application.email} · {application.phone} · 신청일{" "}
+            {contact ? `${contact.email} · ${contact.phone} · ` : ""}신청일{" "}
             {formatDateShort(application.appliedAt)}
           </p>
           <div className="mt-2 flex flex-wrap gap-3 text-xs">

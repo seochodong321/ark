@@ -66,7 +66,6 @@ export async function signup(params: SignupParams): Promise<void> {
       uid: credential.user.uid,
       name: params.name,
       username: params.username,
-      email: params.email,
       photoUrl,
       bio: params.bio.trim() || null,
       role: initialRole(params.role),

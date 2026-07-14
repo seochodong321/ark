@@ -1,11 +1,15 @@
 rules_version = '2';
 
-// ARK Firestore 보안 규칙 (MVP)
+// ARK Firestore 보안 규칙
 //
-// 알려진 한계: 씨앗 잔액/거래가 클라이언트 SDK 트랜잭션으로 처리되므로
-// 악의적 클라이언트가 자신의 잔액을 조작할 수 있다. 씨앗은 금전 가치가
-// 없는 활동 포인트이므로 MVP에서는 허용하고, 향후 Cloud Functions로
-// 씨앗 로직을 이전해 무결성을 강화한다. (README 향후 확장 계획 참고)
+// 알려진 한계(응원 씨앗 자가 발행): 응원 씨앗 잔액(users.seedBalance)이
+// 클라이언트 SDK 트랜잭션으로 갱신되므로, 본인이 자기 문서의 seedBalance를
+// 임의로 늘릴 수 있다. 응원 씨앗은 금전 가치가 없는 활동 포인트이므로
+// 현재는 허용한다.
+// ⚠️ 후원 씨앗(실제 현금)은 절대 이 방식으로 두면 안 된다 — 반드시 서버
+//    (Next.js Route Handler + Firebase Admin SDK 또는 Cloud Functions)에서만
+//    잔액을 변경하고, 클라이언트의 잔액 필드 직접 쓰기를 규칙으로 금지해야 한다.
+//    (README 향후 확장 계획: 후원 씨앗 참고)
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -33,22 +37,35 @@ service cloud.firestore {
       return isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    // 조회수·응원·댓글 수 카운터만 변경하는 업데이트인지 검사
-    function isCounterOnlyUpdate() {
-      return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['viewCount', 'seedCount', 'commentCount']);
+    // 특정 카운터 필드 하나만 정확히 +1 증가시키는 업데이트인지 검사.
+    // 임의 값 설정을 막아 랭킹(조회수·응원수) 조작을 차단한다.
+    function isIncrementOnly(field) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+        && request.resource.data[field] is int
+        && request.resource.data[field] == resource.data[field] + 1;
+    }
+
+    // 특정 카운터 필드 하나만 정확히 ±1 변동시키는 업데이트인지 검사.
+    function isCounterDelta(field) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+        && request.resource.data[field] is int
+        && (request.resource.data[field] == resource.data[field] + 1
+            || request.resource.data[field] == resource.data[field] - 1);
     }
 
     match /users/{uid} {
+      // 공개 프로필 필드만 저장한다(이메일 등 PII는 Firestore에 없음).
       allow read: if true;
       allow create: if isSelf(uid)
         && request.resource.data.role in ['member', 'pastorPending'];
-      // 본인은 role을 변경할 수 없다 (승격은 관리자만).
-      // 팔로워 수는 다른 로그인 사용자가 팔로우/언팔로우할 때만 증감 가능.
+      // 본인은 role·followerCount를 직접 바꿀 수 없다.
+      //  - role 승격은 관리자만
+      //  - followerCount는 다른 로그인 사용자의 팔로우/언팔로우로만 ±1 변동
       allow update: if isAdmin()
-        || (isSelf(uid) && request.resource.data.role == resource.data.role)
-        || (isSignedIn() && request.resource.data.diff(resource.data)
-              .affectedKeys().hasOnly(['followerCount']));
+        || (isSelf(uid)
+              && request.resource.data.role == resource.data.role
+              && request.resource.data.followerCount == resource.data.followerCount)
+        || (isSignedIn() && isCounterDelta('followerCount'));
       allow delete: if isAdmin();
     }
 
@@ -60,6 +77,7 @@ service cloud.firestore {
     }
 
     match /pastors/{uid} {
+      // 공개 프로필(교회·직분 등)만 담는다. 연락처는 하위 private 문서로 분리.
       allow read: if true;
       // 신청서 작성/재신청은 본인, 승인·반려는 관리자
       allow create: if isSelf(uid)
@@ -67,6 +85,23 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isSelf(uid) && request.resource.data.status == 'pending');
       allow delete: if isAdmin();
+
+      // 전화·이메일 등 연락처 — 본인과 관리자만 열람
+      match /private/{doc} {
+        allow read: if isSelf(uid) || isAdmin();
+        allow write: if isSelf(uid);
+      }
+    }
+
+    // 콘텐츠 카운터 업데이트 검증:
+    //  - viewCount: 누구나 +1 (로그아웃 독자의 조회수 반영)
+    //  - seedCount: 로그인 사용자의 응원으로만 +1
+    //  - commentCount: 로그인 사용자의 댓글 작성/삭제로만 ±1
+    // 임의 값 설정을 막아 씨앗추천·조회순 랭킹 조작을 차단한다.
+    function isContentCounterUpdate() {
+      return isIncrementOnly('viewCount')
+        || (isSignedIn() && isIncrementOnly('seedCount'))
+        || (isSignedIn() && isCounterDelta('commentCount'));
     }
 
     match /sermons/{id} {
@@ -75,7 +110,7 @@ service cloud.firestore {
       allow create: if isPastor()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.status == 'draft';
-      allow update: if isOwner() || isAdmin() || isCounterOnlyUpdate();
+      allow update: if isOwner() || isAdmin() || isContentCounterUpdate();
       allow delete: if isOwner() || isAdmin();
     }
 
@@ -85,7 +120,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.status == 'draft';
-      allow update: if isOwner() || isAdmin() || isCounterOnlyUpdate();
+      allow update: if isOwner() || isAdmin() || isContentCounterUpdate();
       allow delete: if isOwner() || isAdmin();
     }
 
@@ -153,8 +188,7 @@ service cloud.firestore {
       allow create: if isPastor()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.status == 'open';
-      allow update: if isOwner() || isAdmin()
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount']));
+      allow update: if isOwner() || isAdmin() || isIncrementOnly('viewCount');
       allow delete: if isOwner() || isAdmin();
     }
   }

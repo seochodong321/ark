@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -29,6 +30,8 @@ function mapUser(uid: string, data: DocumentData): User {
     uid,
     name: asString(data.name),
     username: asString(data.username),
+    // 이메일은 Firestore가 아닌 Firebase Auth에만 보관한다 (공개 노출 방지).
+    // 본인 문서는 AuthProvider가 Auth 토큰의 이메일로 채운다. 타인 조회 시 빈 값.
     email: asString(data.email),
     photoUrl: asStringOrNull(data.photoUrl),
     bio: asStringOrNull(data.bio),
@@ -46,14 +49,28 @@ export async function fetchUser(uid: string): Promise<User | null> {
   return snap.exists() ? mapUser(snap.id, snap.data()) : null;
 }
 
-/** 로그인 사용자 문서 실시간 구독 (씨앗 잔액·권한 변경 즉시 반영) */
+/**
+ * 로그인 사용자 문서 실시간 구독 (씨앗 잔액·권한 변경 즉시 반영).
+ * 과거에 저장된 email 필드가 남아 있으면 즉시 제거한다(자가 치유 마이그레이션).
+ */
 export function subscribeUser(
   uid: string,
   onChange: (user: User | null) => void,
 ): Unsubscribe {
+  const ref = doc(getDb(), COLLECTIONS.users, uid);
   return onSnapshot(
-    doc(getDb(), COLLECTIONS.users, uid),
-    (snap) => onChange(snap.exists() ? mapUser(snap.id, snap.data()) : null),
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        if (snap.data().email !== undefined) {
+          // 본인 문서에서 레거시 PII 제거 (self-update 규칙으로 허용됨)
+          updateDoc(ref, { email: deleteField() }).catch(() => undefined);
+        }
+        onChange(mapUser(snap.id, snap.data()));
+      } else {
+        onChange(null);
+      }
+    },
     () => onChange(null),
   );
 }
@@ -89,7 +106,6 @@ interface CreateUserProfileParams {
   uid: string;
   name: string;
   username: string;
-  email: string;
   photoUrl: string | null;
   bio: string | null;
   role: UserRole;
@@ -113,7 +129,7 @@ export async function createUserProfile(
     tx.set(doc(db, COLLECTIONS.users, params.uid), {
       name: params.name,
       username: params.username,
-      email: params.email,
+      // email은 저장하지 않는다 — Firebase Auth가 유일한 보관처(PII 노출 방지)
       photoUrl: params.photoUrl,
       bio: params.bio,
       role: params.role,

@@ -7,7 +7,6 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
   startAfter,
   where,
   writeBatch,
@@ -33,17 +32,21 @@ import { ROUTES } from "@/shared/constants/routes";
 import type {
   PastorApplicationInput,
   PastorApplicationStatus,
+  PastorContact,
   PastorProfile,
   User,
 } from "@/shared/types";
+
+/** pastors/{uid}/private/contact — 연락처 서브문서 참조 */
+function contactRef(uid: string) {
+  return doc(getDb(), COLLECTIONS.pastors, uid, "private", "contact");
+}
 
 function mapPastor(id: string, data: DocumentData): PastorProfile {
   return {
     uid: id,
     name: asString(data.name),
     username: asString(data.username),
-    email: asString(data.email),
-    phone: asString(data.phone),
     churchName: asString(data.churchName),
     denomination: asString(data.denomination),
     position: asString(data.position),
@@ -67,16 +70,29 @@ export async function fetchPastorProfile(
   return snap.exists() ? mapPastor(snap.id, snap.data()) : null;
 }
 
-/** 목회자 인증 신청. 반려 후 재신청 시 기존 문서를 덮어쓴다. */
+/** 연락처 조회 — 보안 규칙상 본인·관리자만 성공한다 */
+export async function fetchPastorContact(
+  uid: string,
+): Promise<PastorContact | null> {
+  const snap = await getDoc(contactRef(uid));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return { phone: asString(data.phone), email: asString(data.email) };
+}
+
+/**
+ * 목회자 인증 신청. 반려 후 재신청 시 기존 문서를 덮어쓴다.
+ * 공개 프로필과 비공개 연락처를 분리해 하나의 batch로 저장한다.
+ */
 export async function submitPastorApplication(
   user: User,
   input: PastorApplicationInput,
 ): Promise<void> {
-  await setDoc(doc(getDb(), COLLECTIONS.pastors, user.uid), {
+  const db = getDb();
+  const batch = writeBatch(db);
+  batch.set(doc(db, COLLECTIONS.pastors, user.uid), {
     name: input.name,
     username: user.username,
-    email: user.email,
-    phone: input.phone,
     churchName: input.churchName,
     denomination: input.denomination,
     position: input.position,
@@ -91,6 +107,12 @@ export async function submitPastorApplication(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  batch.set(contactRef(user.uid), {
+    phone: input.phone,
+    email: user.email,
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
 }
 
 export async function fetchApplicationsByStatus(

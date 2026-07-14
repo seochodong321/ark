@@ -245,9 +245,11 @@ src/
 
 | 컬렉션 | 문서 ID | 핵심 필드 |
 | --- | --- | --- |
-| `users` | uid | name, username, email, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, followerCount, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt |
+| `users` | uid | name, username, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, followerCount, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt — **email은 저장하지 않음**(Firebase Auth에만 보관, 공개 노출 방지) |
 | `usernames` | username | uid — Username 유일성 보장용 매핑 |
-| `pastors` | uid | 신청서+프로필: churchName, denomination, position, phone, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
+| `pastors` | uid | **공개 프로필**: churchName, denomination, position, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
+| `pastors/{uid}/private/contact` | 고정 | **비공개 연락처**: phone, email — 본인·관리자만 열람(보안 규칙) |
+| `follows` | `{followerUid}_{pastorUid}` | followerId, pastorId, pastorName·pastorUsername(비정규화 — 이메일 알림용), createdAt |
 | `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft=비공개·작성자 전용 / published=공개 / hidden=관리자 숨김), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |
 | `testimonies` | auto | sermons와 동일 구조에서 scripture/series 제외 |
 | `comments` | auto | targetType, targetId, authorId, authorName, body, createdAt |
@@ -255,12 +257,30 @@ src/
 | `reports` | auto | targetType, targetId, targetTitle, reporterId, reason, detail, **status**(pending/resolved/dismissed), resolutionNote |
 | `seedTransactions` | auto 또는 결정적 ID(`attendance-…`, `share-…`) | uid, amount(±), type(signup/attendance/sermonPublish/testimonyPublish/share/event/cheer/contentDeleted/adminGrant), **kind**(cheer/support), targetType, targetId, memo |
 | `jobs` | auto | authorId, authorName·authorUsername, title, churchName, position, region, employmentType, description, contactEmail, contactPhone, deadline, **status**(open/closed), viewCount |
-| `follows` | `{followerUid}_{pastorUid}` | followerId, pastorId, pastorName·pastorUsername(비정규화 — 이메일 알림용), createdAt |
 | `notifications` | auto | uid, type, message, linkUrl, read |
 | `settings` | curation | sermonIds[](노출 순서), headline |
 
 - 시간 필드는 Firestore `Timestamp`로 저장하고, Repository에서 epoch millis(number)로 변환해 노출합니다.
 - 보안 규칙: [firestore.rules](firestore.rules) / 복합 인덱스: [firestore.indexes.json](firestore.indexes.json) / Storage 규칙: [storage.rules](storage.rules)
+
+### 보안 모델
+
+ARK는 Firebase 클라이언트 SDK로 직접 Firestore에 접근하므로, **모든 권한 검증은 Firestore 보안 규칙**이 담당합니다(클라이언트 TS의 권한 체크는 UX용일 뿐 신뢰 경계가 아님).
+
+- **PII 최소 노출**: 공개 프로필 문서(`users`, `pastors`)에는 이름·소개 등 공개 정보만 둡니다.
+  - 이메일은 Firestore에 저장하지 않고 **Firebase Auth에만** 보관 — 본인 세션은 Auth 토큰에서 채웁니다.
+  - 목회자 전화·이메일은 `pastors/{uid}/private/contact` 하위 문서로 분리해 **본인·관리자만** 읽습니다.
+  - 과거에 `users.email`이 저장된 계정은 소유자가 로그인할 때 자동 제거됩니다(자가 치유 마이그레이션, `subscribeUser`).
+- **카운터 무결성**: `viewCount`는 누구나 +1, `seedCount`는 로그인 사용자만 +1, `commentCount`는 ±1,
+  `followerCount`는 다른 로그인 사용자만 ±1 — **임의 값 설정 불가**(규칙에서 정확한 증감만 허용)로 랭킹 조작 차단.
+- **비공개 콘텐츠**: draft/hidden 설교·간증은 작성자·관리자만 읽기 가능.
+
+**남은 위험 — 응원 씨앗 자가 발행 (서버 도입 전까지 유효)**: 응원 씨앗 잔액이 클라이언트 트랜잭션으로
+갱신되므로 본인이 자기 `seedBalance`를 임의로 늘릴 수 있습니다. 응원 씨앗은 금전 가치가 없어 현재는
+허용하나, **후원 씨앗(실제 현금) 도입 시에는 반드시 서버 권위 방식으로 전환**해야 합니다:
+- 잔액 변경·후원·환전은 Next.js Route Handler + Firebase Admin SDK(서비스 계정) 또는 Cloud Functions에서만 수행
+- Firestore 규칙에서 클라이언트의 잔액(비공개잔액 등) 직접 쓰기 금지
+- 구매는 PG(토스페이먼츠 등) 결제 검증 후에만 적립
 
 ## 8. 개발 일정 (TODO)
 
