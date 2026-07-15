@@ -29,12 +29,13 @@ import {
   type PageCursor,
 } from "@/shared/firebase/pagination";
 import { ROUTES } from "@/shared/constants/routes";
-import type {
-  PastorApplicationInput,
-  PastorApplicationStatus,
-  PastorContact,
-  PastorProfile,
-  User,
+import {
+  derivePositionCategory,
+  type PastorApplicationInput,
+  type PastorApplicationStatus,
+  type PastorContact,
+  type PastorProfile,
+  type User,
 } from "@/shared/types";
 
 /** pastors/{uid}/private/contact — 연락처 서브문서 참조 */
@@ -50,6 +51,10 @@ function mapPastor(id: string, data: DocumentData): PastorProfile {
     churchName: asString(data.churchName),
     denomination: asString(data.denomination),
     position: asString(data.position),
+    positionCategory: derivePositionCategory(
+      asStringOrNull(data.positionCategory),
+      asString(data.position),
+    ),
     websiteUrl: asStringOrNull(data.websiteUrl),
     youtubeUrl: asStringOrNull(data.youtubeUrl),
     introduction: asString(data.introduction),
@@ -96,6 +101,7 @@ export async function submitPastorApplication(
     churchName: input.churchName,
     denomination: input.denomination,
     position: input.position,
+    positionCategory: input.positionCategory,
     websiteUrl: input.websiteUrl,
     youtubeUrl: input.youtubeUrl,
     introduction: input.introduction,

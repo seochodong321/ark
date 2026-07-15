@@ -38,14 +38,24 @@ import {
 import { extractBibleBook } from "@/shared/constants/bibleBooks";
 import { SEED_REWARD } from "@/shared/constants/seeds";
 import { buildSearchKeywords } from "@/features/search/services/tokenizer";
+import { fetchPastorProfile } from "@/features/pastors/repositories/pastorRepository";
 import { chunk } from "@/shared/utils/array";
 import type {
   ContentStatus,
   ParsedSermon,
+  PositionCategory,
   Sermon,
   SermonInput,
   User,
 } from "@/shared/types";
+
+/** 작성자의 직분 분류를 조회한다(배지 비정규화용). 목회자만 설교를 쓴다. */
+async function authorPositionCategory(
+  uid: string,
+): Promise<PositionCategory | null> {
+  const profile = await fetchPastorProfile(uid);
+  return profile?.positionCategory ?? null;
+}
 
 export function mapSermon(id: string, data: DocumentData): Sermon {
   return {
@@ -53,6 +63,9 @@ export function mapSermon(id: string, data: DocumentData): Sermon {
     authorId: asString(data.authorId),
     authorName: asString(data.authorName),
     authorUsername: asString(data.authorUsername),
+    authorPositionCategory: asStringOrNull(
+      data.authorPositionCategory,
+    ) as PositionCategory | null,
     title: asString(data.title),
     sermonDate: asStringOrNull(data.sermonDate),
     scripture: asStringOrNull(data.scripture),
@@ -88,11 +101,16 @@ function sermonKeywords(input: SermonInput, author: User): string[] {
 }
 
 /** SermonInput → Firestore 문서 필드 (신규 생성용) */
-function draftDocData(author: User, input: SermonInput) {
+function draftDocData(
+  author: User,
+  input: SermonInput,
+  positionCategory: PositionCategory | null,
+) {
   return {
     authorId: author.uid,
     authorName: author.name,
     authorUsername: author.username,
+    authorPositionCategory: positionCategory,
     title: input.title,
     sermonDate: input.sermonDate,
     scripture: input.scripture,
@@ -130,9 +148,10 @@ export async function createSermonDraft(
   author: User,
   input: SermonInput,
 ): Promise<string> {
+  const category = await authorPositionCategory(author.uid);
   const ref = await addDoc(
     collection(getDb(), COLLECTIONS.sermons),
-    draftDocData(author, input),
+    draftDocData(author, input, category),
   );
   return ref.id;
 }
@@ -143,12 +162,14 @@ export async function createSermonDrafts(
   inputs: SermonInput[],
 ): Promise<string[]> {
   const db = getDb();
+  // 같은 작성자이므로 직분 분류는 한 번만 조회해 재사용한다
+  const category = await authorPositionCategory(author.uid);
   const ids: string[] = [];
   for (const group of chunk(inputs, 400)) {
     const batch = writeBatch(db);
     for (const input of group) {
       const ref = doc(collection(db, COLLECTIONS.sermons));
-      batch.set(ref, draftDocData(author, input));
+      batch.set(ref, draftDocData(author, input, category));
       ids.push(ref.id);
     }
     await batch.commit();
@@ -161,6 +182,8 @@ export async function updateSermon(
   author: User,
   input: SermonInput,
 ): Promise<void> {
+  // 재저장 시 배지 필드도 채워 레거시 설교에 나무체크가 반영되게 한다
+  const category = await authorPositionCategory(author.uid);
   await updateDoc(doc(getDb(), COLLECTIONS.sermons, sermonId), {
     title: input.title,
     sermonDate: input.sermonDate,
@@ -171,6 +194,7 @@ export async function updateSermon(
     series: input.series,
     coverImageUrl: input.coverImageUrl,
     youtubeVideoId: input.youtubeVideoId,
+    authorPositionCategory: category,
     searchKeywords: sermonKeywords(input, author),
     updatedAt: serverTimestamp(),
   });

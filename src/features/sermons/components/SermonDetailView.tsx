@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/AuthProvider";
 import { ScriptureQuote } from "@/features/bible/components/ScriptureQuote";
+import { PastorBadge } from "@/features/pastors/components/PastorBadge";
 import { BookmarkButton } from "@/features/bookmarks/components/BookmarkButton";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { ReportButton } from "@/features/reports/components/ReportButton";
@@ -148,9 +149,10 @@ export function SermonDetailView({ id }: { id: string }) {
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
           <Link
             href={ROUTES.pastorPage(sermon.authorUsername)}
-            className="font-medium text-ink hover:text-accent"
+            className="flex items-center gap-1 font-medium text-ink hover:text-accent"
           >
             {sermon.authorName}
+            <PastorBadge category={sermon.authorPositionCategory} />
           </Link>
           {sermon.sermonDate && (
             <time>{formatSermonDate(sermon.sermonDate)}</time>

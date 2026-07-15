@@ -119,7 +119,12 @@ src/
 
 ### 목회자 인증 (pastors)
 - Pastor로 가입하면 `pastorPending` 권한 → `/pastor/apply`에서 신청서 제출.
-- 신청 항목: 이름, Username, 이메일(계정 정보 사용), 휴대전화, 교회명, 소속 교단, 직분, 공식 홈페이지(선택), 유튜브 채널(선택), 사역 분야(선택), 자기소개, 프로필 사진.
+- 신청 항목: 이름, Username, 이메일(계정 정보 사용), 휴대전화, 교회명, 소속 교단,
+  **직분(전도사/목사/기타 직접 입력)**, 공식 홈페이지(선택), 유튜브 채널(선택), 사역 분야(선택), 자기소개, 프로필 사진.
+- **나무체크 배지**: 직분 분류에 따라 인증 목회자 이름 옆에 배지를 표시한다.
+  전도사 🌲(일반 나무) / 목사 🌳(열매 맺은 나무). 이모지·라벨은 `shared/types/pastor.ts`의
+  `PASTOR_BADGE` 한 곳에서 관리한다. 목회자 페이지·설교 카드·설교 상세에 노출되며,
+  설교 문서에 작성자 직분을 비정규화(`authorPositionCategory`)해 목록에서 추가 Read 없이 표시한다.
 - 관리자 승인 시 `pastor` 권한 + 알림 생성. 반려 시 사유와 함께 재신청 가능.
 - **설교 작성 권한은 pastor(및 admin)만** 보유.
 
@@ -247,7 +252,7 @@ src/
 | --- | --- | --- |
 | `users` | uid | name, username, photoUrl, bio, **role**(member/pastorPending/pastor/admin), seedBalance(응원 씨앗 — 음수 허용), lastAttendanceDate, followerCount, termsAgreedAt, privacyAgreedAt, createdAt, updatedAt — **email은 저장하지 않음**(Firebase Auth에만 보관, 공개 노출 방지) |
 | `usernames` | username | uid — Username 유일성 보장용 매핑 |
-| `pastors` | uid | **공개 프로필**: churchName, denomination, position, websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
+| `pastors` | uid | **공개 프로필**: churchName, denomination, position, positionCategory(evangelist/pastor/other — 배지 기준), websiteUrl, youtubeUrl, introduction, ministryFields[], **status**(pending/approved/rejected), appliedAt, reviewedAt |
 | `pastors/{uid}/private/contact` | 고정 | **비공개 연락처**: phone, email — 본인·관리자만 열람(보안 규칙) |
 | `follows` | `{followerUid}_{pastorUid}` | followerId, pastorId, pastorName·pastorUsername(비정규화 — 이메일 알림용), createdAt |
 | `sermons` | auto | authorId, authorName·authorUsername(비정규화), title, sermonDate(YYYY-MM-DD), scripture, scriptureBook, body, tags[], series, coverImageUrl, youtubeVideoId, **status**(draft=비공개·작성자 전용 / published=공개 / hidden=관리자 숨김), viewCount, seedCount, commentCount, searchKeywords[], publishedAt |

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchUserByUsername } from "@/features/auth/repositories/userRepository";
 import { FollowButton } from "@/features/follows/components/FollowButton";
+import { PastorBadge } from "@/features/pastors/components/PastorBadge";
 import { SermonExplorer } from "@/features/sermons/components/SermonExplorer";
 import { fetchAuthorSermonStats } from "@/features/sermons/repositories/sermonRepository";
 import { AuthorTestimonyList } from "@/features/testimonies/components/AuthorTestimonyList";
@@ -82,7 +83,12 @@ export function PastorPageView({ username }: { username: string }) {
           <div className="flex min-w-0 items-start gap-5">
             <Avatar name={user.name} photoUrl={user.photoUrl} size="lg" />
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-ink">{user.name}</h1>
+              <h1 className="flex items-center gap-1.5 text-2xl font-bold text-ink">
+                {user.name}
+                {pastor?.status === "approved" && (
+                  <PastorBadge category={pastor.positionCategory} />
+                )}
+              </h1>
               <p className="text-sm text-ink-faint">@{user.username}</p>
               {user.bio && (
                 <p className="mt-2 text-sm leading-relaxed text-ink-soft">

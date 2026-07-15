@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/AuthProvider";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Field, Input, Textarea } from "@/shared/components/ui/Field";
+import { Field, Input, Select, Textarea } from "@/shared/components/ui/Field";
 import {
   EmptyState,
   LoadingState,
 } from "@/shared/components/ui/StateView";
 import { ROUTES } from "@/shared/constants/routes";
 import { profilePhotoPath, uploadImage } from "@/shared/firebase/storage";
-import { PASTOR_STATUS_LABEL, type PastorProfile } from "@/shared/types";
+import {
+  PASTOR_STATUS_LABEL,
+  type PastorProfile,
+  type PositionCategory,
+} from "@/shared/types";
 import { toUserMessage } from "@/shared/utils/errors";
 import { parseTags } from "@/shared/utils/text";
 import {
@@ -29,7 +33,9 @@ export function PastorApplyForm() {
   const [phone, setPhone] = useState("");
   const [churchName, setChurchName] = useState("");
   const [denomination, setDenomination] = useState("");
-  const [position, setPosition] = useState("");
+  const [positionCategory, setPositionCategory] =
+    useState<PositionCategory>("evangelist");
+  const [positionOther, setPositionOther] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [ministryFieldsRaw, setMinistryFieldsRaw] = useState("");
@@ -86,12 +92,19 @@ export function PastorApplyForm() {
       const photoUrl = photoFile
         ? await uploadImage(profilePhotoPath(user.uid), photoFile)
         : user.photoUrl;
+      const position =
+        positionCategory === "other"
+          ? positionOther.trim()
+          : positionCategory === "pastor"
+            ? "목사"
+            : "전도사";
       await submitPastorApplication(user, {
         name: user.name,
         phone,
         churchName,
         denomination,
         position,
+        positionCategory,
         websiteUrl: websiteUrl.trim() || null,
         youtubeUrl: youtubeUrl.trim() || null,
         introduction,
@@ -155,14 +168,34 @@ export function PastorApplyForm() {
         </Field>
       </div>
 
-      <Field label="직분" required>
-        <Input
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          required
-          placeholder="예: 담임목사"
-        />
+      <Field
+        label="직분"
+        required
+        hint="겸직이거나 그 외 직분이면 '기타'를 선택해 직접 입력하세요"
+      >
+        <Select
+          value={positionCategory}
+          onChange={(e) =>
+            setPositionCategory(e.target.value as PositionCategory)
+          }
+        >
+          <option value="evangelist">전도사</option>
+          <option value="pastor">목사</option>
+          <option value="other">기타 (직접 입력)</option>
+        </Select>
       </Field>
+
+      {positionCategory === "other" && (
+        <Field label="직분 직접 입력" required>
+          <Input
+            value={positionOther}
+            onChange={(e) => setPositionOther(e.target.value)}
+            required
+            maxLength={40}
+            placeholder="예: 담임목사 겸 선교사"
+          />
+        </Field>
+      )}
 
       <Field label="공식 홈페이지 (선택)">
         <Input

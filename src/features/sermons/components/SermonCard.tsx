@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PastorBadge } from "@/features/pastors/components/PastorBadge";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Sermon } from "@/shared/types";
 import { formatSermonDate } from "@/shared/utils/date";
@@ -33,7 +34,13 @@ export function SermonCard({ sermon }: { sermon: Sermon }) {
           {excerpt(sermon.body)}
         </p>
         <div className="mt-3.5 flex items-center gap-3 text-xs text-ink-faint">
-          <span className="font-medium text-ink-soft">{sermon.authorName}</span>
+          <span className="flex items-center gap-1 font-medium text-ink-soft">
+            {sermon.authorName}
+            <PastorBadge
+              category={sermon.authorPositionCategory}
+              className="text-sm"
+            />
+          </span>
           <span>조회 {sermon.viewCount}</span>
           <span>🌱 {sermon.seedCount}</span>
           {sermon.commentCount > 0 && <span>댓글 {sermon.commentCount}</span>}
