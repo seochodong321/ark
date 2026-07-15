@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PastorBadge } from "@/features/pastors/components/PastorBadge";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Testimony } from "@/shared/types";
 import { formatDateShort } from "@/shared/utils/date";
@@ -28,8 +29,9 @@ export function TestimonyCard({ testimony }: { testimony: Testimony }) {
           {excerpt(testimony.body)}
         </p>
         <div className="mt-3.5 flex items-center gap-3 text-xs text-ink-faint">
-          <span className="font-medium text-ink-soft">
+          <span className="flex items-center gap-1 font-medium text-ink-soft">
             {testimony.authorName}
+            <PastorBadge badge={testimony.authorBadge} className="text-sm" />
           </span>
           <span>조회 {testimony.viewCount}</span>
           <span>🌱 {testimony.seedCount}</span>

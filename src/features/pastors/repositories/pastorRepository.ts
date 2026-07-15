@@ -30,7 +30,11 @@ import {
 } from "@/shared/firebase/pagination";
 import { ROUTES } from "@/shared/constants/routes";
 import {
+  authorBadgeOf,
   derivePositionCategory,
+  type ApplicantType,
+  type AuthorBadge,
+  type OrganizationType,
   type PastorApplicationInput,
   type PastorApplicationStatus,
   type PastorContact,
@@ -48,6 +52,7 @@ function mapPastor(id: string, data: DocumentData): PastorProfile {
     uid: id,
     name: asString(data.name),
     username: asString(data.username),
+    applicantType: asString(data.applicantType, "individual") as ApplicantType,
     churchName: asString(data.churchName),
     denomination: asString(data.denomination),
     position: asString(data.position),
@@ -55,6 +60,9 @@ function mapPastor(id: string, data: DocumentData): PastorProfile {
       asStringOrNull(data.positionCategory),
       asString(data.position),
     ),
+    organizationType: asStringOrNull(
+      data.organizationType,
+    ) as OrganizationType | null,
     websiteUrl: asStringOrNull(data.websiteUrl),
     youtubeUrl: asStringOrNull(data.youtubeUrl),
     introduction: asString(data.introduction),
@@ -73,6 +81,18 @@ export async function fetchPastorProfile(
 ): Promise<PastorProfile | null> {
   const snap = await getDoc(doc(getDb(), COLLECTIONS.pastors, uid));
   return snap.exists() ? mapPastor(snap.id, snap.data()) : null;
+}
+
+/**
+ * 작성자의 인증 배지 분류를 조회한다(설교·간증 비정규화용).
+ * 승인된 목회자/단체만 배지를 갖고, 그 외(일반회원 등)는 null.
+ */
+export async function fetchAuthorBadge(
+  uid: string,
+): Promise<AuthorBadge | null> {
+  const profile = await fetchPastorProfile(uid);
+  if (!profile || profile.status !== "approved") return null;
+  return authorBadgeOf(profile);
 }
 
 /** 연락처 조회 — 보안 규칙상 본인·관리자만 성공한다 */
@@ -98,10 +118,12 @@ export async function submitPastorApplication(
   batch.set(doc(db, COLLECTIONS.pastors, user.uid), {
     name: input.name,
     username: user.username,
+    applicantType: input.applicantType,
     churchName: input.churchName,
     denomination: input.denomination,
     position: input.position,
     positionCategory: input.positionCategory,
+    organizationType: input.organizationType,
     websiteUrl: input.websiteUrl,
     youtubeUrl: input.youtubeUrl,
     introduction: input.introduction,

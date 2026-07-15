@@ -9,6 +9,7 @@ import { CommentSection } from "@/features/comments/components/CommentSection";
 import { ReportButton } from "@/features/reports/components/ReportButton";
 import { CheerButton } from "@/features/seeds/components/CheerButton";
 import { ShareButton } from "@/features/seeds/components/ShareButton";
+import { PastorBadge } from "@/features/pastors/components/PastorBadge";
 import { Badge } from "@/shared/components/ui/Badge";
 import { MarkdownView } from "@/shared/components/ui/MarkdownView";
 import {
@@ -123,9 +124,10 @@ export function TestimonyDetailView({ id }: { id: string }) {
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
           <Link
             href={ROUTES.pastorPage(testimony.authorUsername)}
-            className="font-medium text-ink hover:text-accent"
+            className="flex items-center gap-1 font-medium text-ink hover:text-accent"
           >
             {testimony.authorName}
+            <PastorBadge badge={testimony.authorBadge} />
           </Link>
           {testimony.publishedAt && (
             <time>{formatDate(testimony.publishedAt)}</time>

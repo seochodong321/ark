@@ -152,7 +152,7 @@ export function SermonDetailView({ id }: { id: string }) {
             className="flex items-center gap-1 font-medium text-ink hover:text-accent"
           >
             {sermon.authorName}
-            <PastorBadge category={sermon.authorPositionCategory} />
+            <PastorBadge badge={sermon.authorBadge} />
           </Link>
           {sermon.sermonDate && (
             <time>{formatSermonDate(sermon.sermonDate)}</time>

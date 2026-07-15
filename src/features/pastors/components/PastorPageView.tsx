@@ -14,7 +14,13 @@ import {
   ErrorState,
   LoadingState,
 } from "@/shared/components/ui/StateView";
-import { canWriteSermon, type PastorProfile, type User } from "@/shared/types";
+import {
+  authorBadgeOf,
+  canWriteSermon,
+  ORGANIZATION_TYPE_LABEL,
+  type PastorProfile,
+  type User,
+} from "@/shared/types";
 import { formatMinistrySpan } from "@/shared/utils/date";
 import { fetchPastorProfile } from "../repositories/pastorRepository";
 
@@ -86,7 +92,7 @@ export function PastorPageView({ username }: { username: string }) {
               <h1 className="flex items-center gap-1.5 text-2xl font-bold text-ink">
                 {user.name}
                 {pastor?.status === "approved" && (
-                  <PastorBadge category={pastor.positionCategory} />
+                  <PastorBadge badge={authorBadgeOf(pastor)} />
                 )}
               </h1>
               <p className="text-sm text-ink-faint">@{user.username}</p>
@@ -112,9 +118,23 @@ export function PastorPageView({ username }: { username: string }) {
         {pastor && pastor.status === "approved" && (
           <div className="mt-6 rounded-xl border border-line bg-white p-5">
             <div className="flex flex-wrap items-center gap-2 text-sm text-ink">
-              <Badge tone="accent">목회자</Badge>
-              <span className="font-medium">{pastor.churchName}</span>
-              <span className="text-ink-soft">{pastor.position}</span>
+              {pastor.applicantType === "organization" ? (
+                <>
+                  <Badge tone="accent">교회·단체</Badge>
+                  {pastor.organizationType && (
+                    <span className="text-ink-soft">
+                      {ORGANIZATION_TYPE_LABEL[pastor.organizationType]}
+                    </span>
+                  )}
+                  <span className="font-medium">{pastor.churchName}</span>
+                </>
+              ) : (
+                <>
+                  <Badge tone="accent">목회자</Badge>
+                  <span className="font-medium">{pastor.churchName}</span>
+                  <span className="text-ink-soft">{pastor.position}</span>
+                </>
+              )}
               <span className="text-ink-faint">{pastor.denomination}</span>
             </div>
             {pastor.ministryFields.length > 0 && (

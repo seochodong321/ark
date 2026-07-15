@@ -1,5 +1,5 @@
 import type { ContentStatus } from "./common";
-import type { PositionCategory } from "./pastor";
+import type { AuthorBadge } from "./pastor";
 
 export interface Sermon {
   id: string;
@@ -7,8 +7,8 @@ export interface Sermon {
   /** 목록/검색 화면에서 추가 Read를 막기 위한 비정규화 필드 */
   authorName: string;
   authorUsername: string;
-  /** 작성자 직분 분류(비정규화) — 나무체크 배지 표시용. 레거시 문서는 null */
-  authorPositionCategory: PositionCategory | null;
+  /** 작성자 인증 배지 분류(비정규화) — 나무체크 표시용. 미인증/레거시는 null */
+  authorBadge: AuthorBadge | null;
   title: string;
   /** YYYY-MM-DD */
   sermonDate: string | null;

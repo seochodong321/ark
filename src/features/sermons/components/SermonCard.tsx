@@ -36,10 +36,7 @@ export function SermonCard({ sermon }: { sermon: Sermon }) {
         <div className="mt-3.5 flex items-center gap-3 text-xs text-ink-faint">
           <span className="flex items-center gap-1 font-medium text-ink-soft">
             {sermon.authorName}
-            <PastorBadge
-              category={sermon.authorPositionCategory}
-              className="text-sm"
-            />
+            <PastorBadge badge={sermon.authorBadge} className="text-sm" />
           </span>
           <span>조회 {sermon.viewCount}</span>
           <span>🌱 {sermon.seedCount}</span>

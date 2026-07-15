@@ -13,10 +13,14 @@ import {
 import { ROUTES } from "@/shared/constants/routes";
 import { profilePhotoPath, uploadImage } from "@/shared/firebase/storage";
 import {
+  ORGANIZATION_TYPE_LABEL,
   PASTOR_STATUS_LABEL,
+  type ApplicantType,
+  type OrganizationType,
   type PastorProfile,
   type PositionCategory,
 } from "@/shared/types";
+import { cn } from "@/shared/utils/cn";
 import { toUserMessage } from "@/shared/utils/errors";
 import { parseTags } from "@/shared/utils/text";
 import {
@@ -33,9 +37,13 @@ export function PastorApplyForm() {
   const [phone, setPhone] = useState("");
   const [churchName, setChurchName] = useState("");
   const [denomination, setDenomination] = useState("");
+  const [applicantType, setApplicantType] =
+    useState<ApplicantType>("individual");
   const [positionCategory, setPositionCategory] =
     useState<PositionCategory>("evangelist");
   const [positionOther, setPositionOther] = useState("");
+  const [organizationType, setOrganizationType] =
+    useState<OrganizationType>("church");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [ministryFieldsRaw, setMinistryFieldsRaw] = useState("");
@@ -92,19 +100,23 @@ export function PastorApplyForm() {
       const photoUrl = photoFile
         ? await uploadImage(profilePhotoPath(user.uid), photoFile)
         : user.photoUrl;
-      const position =
-        positionCategory === "other"
+      const isOrg = applicantType === "organization";
+      const position = isOrg
+        ? ""
+        : positionCategory === "other"
           ? positionOther.trim()
           : positionCategory === "pastor"
             ? "목사"
             : "전도사";
       await submitPastorApplication(user, {
         name: user.name,
+        applicantType,
         phone,
         churchName,
         denomination,
         position,
-        positionCategory,
+        positionCategory: isOrg ? "other" : positionCategory,
+        organizationType: isOrg ? organizationType : null,
         websiteUrl: websiteUrl.trim() || null,
         youtubeUrl: youtubeUrl.trim() || null,
         introduction,
@@ -135,9 +147,41 @@ export function PastorApplyForm() {
           {user.username}) · {user.email}
         </p>
         <p className="mt-1 text-xs text-ink-faint">
-          이름·Username·이메일은 계정 정보를 사용합니다.
+          {applicantType === "organization"
+            ? "게시물에는 위 계정 이름이 작성자(교회·단체명)로 표시됩니다."
+            : "이름·Username·이메일은 계정 정보를 사용합니다."}
         </p>
       </div>
+
+      <Field label="인증 유형" required>
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              { value: "individual", title: "개인 목회자", desc: "전도사·목사 등" },
+              { value: "organization", title: "교회·단체", desc: "교회·매체·선교단체" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setApplicantType(option.value)}
+              className={cn(
+                "rounded-xl border p-4 text-left transition-colors",
+                applicantType === option.value
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-white hover:border-ink-faint",
+              )}
+            >
+              <span className="block font-semibold text-ink">
+                {option.title}
+              </span>
+              <span className="mt-1 block text-xs text-ink-soft">
+                {option.desc}
+              </span>
+            </button>
+          ))}
+        </div>
+      </Field>
 
       <Field label="휴대전화" required>
         <Input
@@ -150,12 +194,17 @@ export function PastorApplyForm() {
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="교회명" required>
+        <Field
+          label={applicantType === "organization" ? "단체·교회명" : "교회명"}
+          required
+        >
           <Input
             value={churchName}
             onChange={(e) => setChurchName(e.target.value)}
             required
-            placeholder="OO교회"
+            placeholder={
+              applicantType === "organization" ? "예: OO교회 월간지" : "OO교회"
+            }
           />
         </Field>
         <Field label="소속 교단" required>
@@ -168,33 +217,52 @@ export function PastorApplyForm() {
         </Field>
       </div>
 
-      <Field
-        label="직분"
-        required
-        hint="겸직이거나 그 외 직분이면 '기타'를 선택해 직접 입력하세요"
-      >
-        <Select
-          value={positionCategory}
-          onChange={(e) =>
-            setPositionCategory(e.target.value as PositionCategory)
-          }
-        >
-          <option value="evangelist">전도사</option>
-          <option value="pastor">목사</option>
-          <option value="other">기타 (직접 입력)</option>
-        </Select>
-      </Field>
-
-      {positionCategory === "other" && (
-        <Field label="직분 직접 입력" required>
-          <Input
-            value={positionOther}
-            onChange={(e) => setPositionOther(e.target.value)}
-            required
-            maxLength={40}
-            placeholder="예: 담임목사 겸 선교사"
-          />
+      {applicantType === "organization" ? (
+        <Field label="단체 유형" required>
+          <Select
+            value={organizationType}
+            onChange={(e) =>
+              setOrganizationType(e.target.value as OrganizationType)
+            }
+          >
+            {Object.entries(ORGANIZATION_TYPE_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
         </Field>
+      ) : (
+        <>
+          <Field
+            label="직분"
+            required
+            hint="겸직이거나 그 외 직분이면 '기타'를 선택해 직접 입력하세요"
+          >
+            <Select
+              value={positionCategory}
+              onChange={(e) =>
+                setPositionCategory(e.target.value as PositionCategory)
+              }
+            >
+              <option value="evangelist">전도사</option>
+              <option value="pastor">목사</option>
+              <option value="other">기타 (직접 입력)</option>
+            </Select>
+          </Field>
+
+          {positionCategory === "other" && (
+            <Field label="직분 직접 입력" required>
+              <Input
+                value={positionOther}
+                onChange={(e) => setPositionOther(e.target.value)}
+                required
+                maxLength={40}
+                placeholder="예: 담임목사 겸 선교사"
+              />
+            </Field>
+          )}
+        </>
       )}
 
       <Field label="공식 홈페이지 (선택)">

@@ -23,6 +23,7 @@ import {
   asNumber,
   asString,
   asStringArray,
+  asStringOrNull,
   toMillis,
   toMillisOrNull,
 } from "@/shared/firebase/converters";
@@ -34,7 +35,9 @@ import {
 } from "@/shared/firebase/pagination";
 import { SEED_REWARD } from "@/shared/constants/seeds";
 import { buildSearchKeywords } from "@/features/search/services/tokenizer";
+import { fetchAuthorBadge } from "@/features/pastors/repositories/pastorRepository";
 import type {
+  AuthorBadge,
   ContentStatus,
   Testimony,
   TestimonyInput,
@@ -47,6 +50,7 @@ export function mapTestimony(id: string, data: DocumentData): Testimony {
     authorId: asString(data.authorId),
     authorName: asString(data.authorName),
     authorUsername: asString(data.authorUsername),
+    authorBadge: asStringOrNull(data.authorBadge) as AuthorBadge | null,
     title: asString(data.title),
     body: asString(data.body),
     tags: asStringArray(data.tags),
@@ -72,10 +76,12 @@ export async function createTestimonyDraft(
   author: User,
   input: TestimonyInput,
 ): Promise<string> {
+  const badge = await fetchAuthorBadge(author.uid);
   const ref = await addDoc(collection(getDb(), COLLECTIONS.testimonies), {
     authorId: author.uid,
     authorName: author.name,
     authorUsername: author.username,
+    authorBadge: badge,
     title: input.title,
     body: input.body,
     tags: input.tags,
@@ -96,10 +102,12 @@ export async function updateTestimony(
   author: User,
   input: TestimonyInput,
 ): Promise<void> {
+  const badge = await fetchAuthorBadge(author.uid);
   await updateDoc(doc(getDb(), COLLECTIONS.testimonies, testimonyId), {
     title: input.title,
     body: input.body,
     tags: input.tags,
+    authorBadge: badge,
     searchKeywords: testimonyKeywords(input, author),
     updatedAt: serverTimestamp(),
   });
