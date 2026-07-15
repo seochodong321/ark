@@ -27,7 +27,11 @@ import {
   type Page,
   type PageCursor,
 } from "@/shared/firebase/pagination";
-import { CHEER_COST, SEED_REWARD } from "@/shared/constants/seeds";
+import {
+  CHEER_MAX_PER_ACTION,
+  CHEER_MIN_PER_ACTION,
+  SEED_REWARD,
+} from "@/shared/constants/seeds";
 import { todayString } from "@/shared/utils/date";
 import type {
   ContentType,
@@ -161,37 +165,43 @@ const CONTENT_COLLECTION: Record<ContentType, string> = {
   testimony: COLLECTIONS.testimonies,
 };
 
+/** 잔액 부족 시 UI가 구분해 처리할 수 있도록 던지는 sentinel 코드 */
+export const SEED_INSUFFICIENT = "SEED_INSUFFICIENT";
+
 /**
- * 응원: 씨앗 1개 차감 + 콘텐츠 seedCount 증가 + 거래 기록.
- * 잔액 부족 시 전체 트랜잭션이 실패한다.
+ * 응원: 선택한 개수(amount)만큼 씨앗 차감 + 콘텐츠 seedCount 증가 + 거래 기록.
+ * amount는 1~CHEER_MAX_PER_ACTION 범위. 잔액 부족 시 트랜잭션이 실패한다.
  */
 export async function cheerContent(params: {
   uid: string;
   targetType: ContentType;
   targetId: string;
   targetTitle: string;
+  amount: number;
 }): Promise<void> {
+  const amount = Math.floor(params.amount);
+  if (amount < CHEER_MIN_PER_ACTION || amount > CHEER_MAX_PER_ACTION) {
+    throw new Error("보낼 씨앗 개수가 올바르지 않습니다.");
+  }
   const db = getDb();
   await runTransaction(db, async (tx) => {
     const userRef = doc(db, COLLECTIONS.users, params.uid);
     const userSnap = await tx.get(userRef);
     const balance = asNumber(userSnap.data()?.seedBalance);
-    if (balance < CHEER_COST) {
-      throw new Error(
-        "응원 씨앗이 부족합니다. 출석·기록·공유로 씨앗을 모아보세요.",
-      );
+    if (balance < amount) {
+      throw new Error(SEED_INSUFFICIENT);
     }
     tx.update(userRef, {
-      seedBalance: increment(-CHEER_COST),
+      seedBalance: increment(-amount),
       updatedAt: serverTimestamp(),
     });
     tx.update(
       doc(db, CONTENT_COLLECTION[params.targetType], params.targetId),
-      { seedCount: increment(1) },
+      { seedCount: increment(amount) },
     );
     tx.set(doc(collection(db, COLLECTIONS.seedTransactions)), {
       uid: params.uid,
-      amount: -CHEER_COST,
+      amount: -amount,
       type: "cheer",
       kind: "cheer",
       targetType: params.targetType,

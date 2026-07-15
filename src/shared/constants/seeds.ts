@@ -10,8 +10,9 @@ export const SEED_REWARD = {
   share: 1,
 } as const;
 
-/** 응원 1회당 소모되는 응원 씨앗 */
-export const CHEER_COST = 1;
+/** 한 번에 보낼 수 있는 최소·최대 응원 씨앗 (단일 트랜잭션 상한 = 보안 규칙과 일치) */
+export const CHEER_MIN_PER_ACTION = 1;
+export const CHEER_MAX_PER_ACTION = 100;
 
 // 참고: 유료 잔액과 관련한 단가·정산 등 민감한 정책 값은 클라이언트 코드에
 // 두지 않는다. 도입 시 서버(비공개 환경 변수 + Admin SDK)에서만 다룬다.

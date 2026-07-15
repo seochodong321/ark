@@ -74,10 +74,7 @@ export function ScriptureQuote({ scripture }: { scripture: string | null }) {
           전체 {passage.verses.length}절 읽기
         </button>
       )}
-      <p className="mt-4 text-[11px] text-ink-faint">
-        개역한글판(1961) · 저작권 보호기간 만료 — 자유롭게 인용할 수 있는
-        본문입니다
-      </p>
+      <p className="mt-4 text-[11px] text-ink-faint">개역한글판(1961)</p>
     </figure>
   );
 }

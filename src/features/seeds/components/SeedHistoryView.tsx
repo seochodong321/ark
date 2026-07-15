@@ -41,8 +41,7 @@ function SeedHistory({ user }: { user: User }) {
           {SEED_REWARD.testimonyPublish} · 공유 +{SEED_REWARD.share}
         </p>
         <p className="mt-1.5 text-[11px] leading-relaxed text-accent-strong/70">
-          응원 씨앗은 마음에 남은 기록을 응원(추천)하는 데 쓰입니다. 환전되지
-          않으며, 보상받은 기록을 삭제하면 보상이 회수됩니다.
+          기록을 응원하는 데 쓰이며, 환전되지 않습니다.
         </p>
       </div>
 

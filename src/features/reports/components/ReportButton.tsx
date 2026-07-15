@@ -78,8 +78,7 @@ export function ReportButton({
         {done ? (
           <div className="space-y-4">
             <p className="text-sm leading-relaxed text-ink-soft">
-              신고가 접수되었습니다. 관리자가 검토 후 조치합니다. 신뢰할 수 있는
-              아카이브를 만드는 데 도움을 주셔서 감사합니다.
+              신고가 접수되었습니다. 관리자가 검토 후 조치합니다.
             </p>
             <Button className="w-full" onClick={() => setOpen(false)}>
               닫기

@@ -92,14 +92,24 @@ service cloud.firestore {
       }
     }
 
+    // 응원 1회에 보낼 수 있는 씨앗 상한 (CHEER_MAX_PER_ACTION과 일치시킬 것).
+    // 로그인 사용자가 seedCount를 1~상한 범위로만 증가시킬 수 있게 해
+    // 임의 값 설정(랭킹 조작)을 차단하면서 다중 응원을 허용한다.
+    function isSeedCountCheer() {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seedCount'])
+        && request.resource.data.seedCount is int
+        && request.resource.data.seedCount > resource.data.seedCount
+        && request.resource.data.seedCount <= resource.data.seedCount + 100;
+    }
+
     // 콘텐츠 카운터 업데이트 검증:
     //  - viewCount: 누구나 +1 (로그아웃 독자의 조회수 반영)
-    //  - seedCount: 로그인 사용자의 응원으로만 +1
+    //  - seedCount: 로그인 사용자의 응원으로만 1~상한 증가
     //  - commentCount: 로그인 사용자의 댓글 작성/삭제로만 ±1
-    // 임의 값 설정을 막아 씨앗추천·조회순 랭킹 조작을 차단한다.
     function isContentCounterUpdate() {
       return isIncrementOnly('viewCount')
-        || (isSignedIn() && isIncrementOnly('seedCount'))
+        || isSeedCountCheer()
         || (isSignedIn() && isCounterDelta('commentCount'));
     }
 
