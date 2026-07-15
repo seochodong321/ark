@@ -3,11 +3,7 @@ import {
   LegalDocument,
   type LegalSection,
 } from "@/shared/components/legal/LegalDocument";
-import {
-  CONTACT_EMAIL,
-  LEGAL_EFFECTIVE_DATE,
-  SITE_NAME,
-} from "@/shared/constants/site";
+import { LEGAL_EFFECTIVE_DATE, SITE_NAME } from "@/shared/constants/site";
 
 export const metadata: Metadata = {
   title: "이용약관 — ARK",
@@ -162,9 +158,9 @@ const SECTIONS: LegalSection[] = [
     heading: "제11조 (탈퇴와 계약 해지)",
     body: (
       <p>
-        회원은 언제든지 문의처({CONTACT_EMAIL})로 탈퇴를 요청할 수 있습니다.
-        탈퇴 시 개인정보는 개인정보처리방침에 따라 파기되며, 공개로 남기길
-        원하는 콘텐츠는 요청에 따라 처리합니다.
+        회원은 계정 설정에서 언제든지 직접 탈퇴할 수 있습니다. 탈퇴 시 계정과
+        회원이 작성한 콘텐츠(설교·간증·댓글 등)는 삭제되며, 개인정보는
+        개인정보처리방침에 따라 파기됩니다.
       </p>
     ),
   },

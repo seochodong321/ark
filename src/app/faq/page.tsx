@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ROUTES } from "@/shared/constants/routes";
-import { CONTACT_EMAIL, SITE_NAME } from "@/shared/constants/site";
+import { SITE_NAME } from "@/shared/constants/site";
 
 export const metadata: Metadata = {
   title: "자주 묻는 질문 — ARK",
@@ -229,13 +229,7 @@ export default function FaqPage() {
       <p className="mt-14 rounded-2xl border border-line bg-paper-warm/40 p-6 text-center text-sm leading-relaxed text-ink-soft">
         더 궁금한 점이 있으신가요?
         <br />
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          className="font-medium text-accent underline underline-offset-4"
-        >
-          {CONTACT_EMAIL}
-        </a>
-        으로 문의해주세요.
+        문의 창구를 준비하고 있습니다. 곧 안내해드리겠습니다.
       </p>
     </main>
   );

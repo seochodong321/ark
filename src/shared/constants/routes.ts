@@ -18,6 +18,7 @@ export const ROUTES = {
   archive: "/archive",
   bookmarks: "/bookmarks",
   seeds: "/seeds",
+  settings: "/settings",
   jobs: "/jobs",
   jobDetail: (id: string) => `/jobs/${id}`,
   jobNew: "/jobs/new",

@@ -110,6 +110,11 @@ export function Header() {
                       label="씨앗 내역"
                       onClick={() => setMenuOpen(false)}
                     />
+                    <MenuLink
+                      href={ROUTES.settings}
+                      label="계정 설정"
+                      onClick={() => setMenuOpen(false)}
+                    />
                     {user.role === "pastorPending" && (
                       <MenuLink
                         href={ROUTES.pastorApply}

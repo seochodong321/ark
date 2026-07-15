@@ -3,11 +3,7 @@ import {
   LegalDocument,
   type LegalSection,
 } from "@/shared/components/legal/LegalDocument";
-import {
-  CONTACT_EMAIL,
-  LEGAL_EFFECTIVE_DATE,
-  SITE_NAME,
-} from "@/shared/constants/site";
+import { LEGAL_EFFECTIVE_DATE, SITE_NAME } from "@/shared/constants/site";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침 — ARK",
@@ -100,9 +96,9 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         이용자는 언제든지 자신의 개인정보에 대한 열람·정정·삭제·처리정지를
-        요구할 수 있습니다. 프로필 정보는 서비스 내에서 직접 수정할 수 있으며,
-        그 외 요청은 문의처({CONTACT_EMAIL})로 연락하면 지체 없이
-        처리합니다. 만 14세 미만 아동의 개인정보는 수집하지 않습니다.
+        요구할 수 있습니다. 프로필 정보는 서비스 내에서 직접 수정할 수 있고,
+        회원 탈퇴는 계정 설정에서 직접 진행할 수 있습니다. 만 14세 미만 아동의
+        개인정보는 수집하지 않습니다.
       </p>
     ),
   },
@@ -132,7 +128,7 @@ const SECTIONS: LegalSection[] = [
     heading: "9. 개인정보 보호책임자 및 문의처",
     body: (
       <p>
-        개인정보 보호책임자: {SITE_NAME} 운영자 / 문의: {CONTACT_EMAIL}
+        개인정보 보호책임자: {SITE_NAME} 운영자 (문의 창구는 준비 중입니다.)
         <br />
         개인정보 침해 신고는 개인정보침해신고센터(privacy.kisa.or.kr,
         국번없이 118)에 문의할 수 있습니다.

@@ -65,14 +65,17 @@ service cloud.firestore {
               && request.resource.data.role == resource.data.role
               && request.resource.data.followerCount == resource.data.followerCount)
         || (isSignedIn() && isCounterDelta('followerCount'));
-      allow delete: if isAdmin();
+      // 본인 탈퇴 또는 관리자
+      allow delete: if isSelf(uid) || isAdmin();
     }
 
     match /usernames/{username} {
       allow read: if true;
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
-      allow delete: if isAdmin();
+      // 본인 소유 매핑(탈퇴) 또는 관리자
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.uid == request.auth.uid);
     }
 
     match /pastors/{uid} {
@@ -83,7 +86,8 @@ service cloud.firestore {
         && request.resource.data.status == 'pending';
       allow update: if isAdmin()
         || (isSelf(uid) && request.resource.data.status == 'pending');
-      allow delete: if isAdmin();
+      // 본인 탈퇴 또는 관리자
+      allow delete: if isSelf(uid) || isAdmin();
 
       // 전화·이메일 등 연락처 — 본인과 관리자만 열람
       match /private/{doc} {
