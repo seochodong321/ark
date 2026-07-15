@@ -246,6 +246,9 @@ src/
 ### 사이트 기본기
 - 커스텀 404·오류 페이지, 파비콘(`app/icon.svg`), OpenGraph 메타데이터(`metadataBase`),
   robots.txt(개인 영역 색인 제외)·sitemap.xml (`app/robots.ts`, `app/sitemap.ts`).
+- **FAQ(`/faq`)**: About을 대신하는 소개 페이지. ARK가 무엇인지, 특정 교단·이단이 아니라는 점,
+  설교를 판매하지 않고 무료라는 점 등 오해하기 쉬운 부분을 정면으로 설명. 정적 콘텐츠 +
+  네이티브 `<details>` 아코디언(클라이언트 JS 없음). 푸터에서 접근.
 
 ### 관리자 (admin) — `/admin`
 - 목회자 승인/반려, 신고 처리, 콘텐츠 관리(비공개/삭제), 씨앗 지급, 메인 큐레이션.

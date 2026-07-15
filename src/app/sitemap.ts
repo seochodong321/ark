@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ROUTES.testimonies,
     ROUTES.jobs,
     ROUTES.search,
+    ROUTES.faq,
     ROUTES.terms,
     ROUTES.privacy,
   ];

@@ -11,6 +11,7 @@ const FOOTER_LINKS = [
 ];
 
 const LEGAL_LINKS = [
+  { href: ROUTES.faq, label: "자주 묻는 질문" },
   { href: ROUTES.terms, label: "이용약관" },
   { href: ROUTES.privacy, label: "개인정보처리방침" },
 ];

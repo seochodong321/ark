@@ -22,6 +22,7 @@ export const ROUTES = {
   jobDetail: (id: string) => `/jobs/${id}`,
   jobNew: "/jobs/new",
   jobEdit: (id: string) => `/jobs/${id}/edit`,
+  faq: "/faq",
   terms: "/terms",
   privacy: "/privacy",
   admin: "/admin",
