@@ -195,6 +195,20 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // 자료실 — 회원 누구나 게시(즉시 공개), 열람은 누구나
+    match /resources/{id} {
+      allow read: if resource.data.status == 'published'
+        || isOwner() || isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'published';
+      // 소유자/관리자 수정 또는 카운터(조회·응원·댓글·다운로드) 증감
+      allow update: if isOwner() || isAdmin()
+        || isContentCounterUpdate()
+        || isIncrementOnly('downloadCount');
+      allow delete: if isOwner() || isAdmin();
+    }
+
     // 채용 게시판 — 작성은 인증 목회자만, 열람은 누구나
     match /jobs/{id} {
       allow read: if true;

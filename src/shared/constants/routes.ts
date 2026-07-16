@@ -1,3 +1,5 @@
+import type { ContentType } from "@/shared/types/common";
+
 /** 라우트 경로의 Single Source. 하드코딩된 경로 문자열 사용 금지. */
 export const ROUTES = {
   home: "/",
@@ -19,6 +21,10 @@ export const ROUTES = {
   bookmarks: "/bookmarks",
   seeds: "/seeds",
   settings: "/settings",
+  resources: "/resources",
+  resourceDetail: (id: string) => `/resources/${id}`,
+  resourceNew: "/resources/new",
+  resourceEdit: (id: string) => `/resources/${id}/edit`,
   jobs: "/jobs",
   jobDetail: (id: string) => `/jobs/${id}`,
   jobNew: "/jobs/new",
@@ -33,3 +39,13 @@ export const ROUTES = {
   adminSeeds: "/admin/seeds",
   adminCuration: "/admin/curation",
 } as const;
+
+/** 콘텐츠 유형 → 상세 페이지 경로 (북마크·신고 등 공용) */
+export function contentDetailRoute(type: ContentType, id: string): string {
+  const routes: Record<ContentType, (id: string) => string> = {
+    sermon: ROUTES.sermonDetail,
+    testimony: ROUTES.testimonyDetail,
+    resource: ROUTES.resourceDetail,
+  };
+  return routes[type](id);
+}

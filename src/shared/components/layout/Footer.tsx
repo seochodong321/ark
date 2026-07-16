@@ -4,6 +4,7 @@ import { ROUTES } from "@/shared/constants/routes";
 const FOOTER_LINKS = [
   { href: ROUTES.sermons, label: "설교" },
   { href: ROUTES.testimonies, label: "간증" },
+  { href: ROUTES.resources, label: "자료실" },
   { href: ROUTES.jobs, label: "채용" },
   { href: ROUTES.search, label: "검색" },
   { href: ROUTES.migration, label: "설교 옮기기" },

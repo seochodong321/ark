@@ -25,6 +25,8 @@ export const RESERVED_USERNAMES = new Set([
   "notifications",
   "jobs",
   "job",
+  "resources",
+  "resource",
   "faq",
   "about",
   "terms",

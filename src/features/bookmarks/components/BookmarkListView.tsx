@@ -10,7 +10,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@/shared/components/ui/StateView";
-import { ROUTES } from "@/shared/constants/routes";
+import { contentDetailRoute } from "@/shared/constants/routes";
 import type { PageCursor } from "@/shared/firebase/pagination";
 import { usePagedList } from "@/shared/hooks/usePagedList";
 import { CONTENT_TYPE_LABEL, type User } from "@/shared/types";
@@ -44,10 +44,10 @@ function BookmarkList({ user }: { user: User }) {
     <>
       <ul className="divide-y divide-line">
         {items.map((bookmark) => {
-          const href =
-            bookmark.targetType === "sermon"
-              ? ROUTES.sermonDetail(bookmark.targetId)
-              : ROUTES.testimonyDetail(bookmark.targetId);
+          const href = contentDetailRoute(
+            bookmark.targetType,
+            bookmark.targetId,
+          );
           return (
             <li key={bookmark.id}>
               <Link href={href} className="group block py-4">

@@ -37,6 +37,9 @@ export async function purgeUserContent(uid: string): Promise<void> {
     query(collection(db, COLLECTIONS.testimonies), where("authorId", "==", uid)),
   );
   await deleteQuery(
+    query(collection(db, COLLECTIONS.resources), where("authorId", "==", uid)),
+  );
+  await deleteQuery(
     query(collection(db, COLLECTIONS.comments), where("authorId", "==", uid)),
   );
   await deleteQuery(

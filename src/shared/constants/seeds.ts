@@ -7,6 +7,7 @@ export const SEED_REWARD = {
   attendance: 1,
   sermonPublish: 5,
   testimonyPublish: 3,
+  resourcePublish: 3,
   share: 1,
 } as const;
 

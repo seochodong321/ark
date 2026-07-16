@@ -40,6 +40,7 @@ import type {
 const CONTENT_COLLECTION: Record<ContentType, string> = {
   sermon: COLLECTIONS.sermons,
   testimony: COLLECTIONS.testimonies,
+  resource: COLLECTIONS.resources,
 };
 
 function mapReport(snap: QueryDocumentSnapshot<DocumentData>): Report {

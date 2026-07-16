@@ -22,6 +22,7 @@ export type SeedTransactionType =
   | "attendance"
   | "sermonPublish"
   | "testimonyPublish"
+  | "resourcePublish"
   | "share"
   | "event"
   | "cheer"
@@ -46,6 +47,7 @@ export const SEED_TRANSACTION_LABEL: Record<SeedTransactionType, string> = {
   attendance: "매일 출석",
   sermonPublish: "설교 공개 보상",
   testimonyPublish: "간증 공개 보상",
+  resourcePublish: "자료 나눔 보상",
   share: "공유하기",
   event: "운영 이벤트",
   cheer: "응원",

@@ -9,5 +9,6 @@ export * from "./report";
 export * from "./seed";
 export * from "./job";
 export * from "./follow";
+export * from "./resource";
 export * from "./notification";
 export * from "./settings";

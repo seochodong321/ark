@@ -29,6 +29,7 @@ const COMMENT_PAGE_SIZE = 20;
 const CONTENT_COLLECTION: Record<ContentType, string> = {
   sermon: COLLECTIONS.sermons,
   testimony: COLLECTIONS.testimonies,
+  resource: COLLECTIONS.resources,
 };
 
 function mapComment(snap: QueryDocumentSnapshot<DocumentData>): Comment {

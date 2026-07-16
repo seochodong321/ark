@@ -15,7 +15,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@/shared/components/ui/StateView";
-import { ROUTES } from "@/shared/constants/routes";
+import { contentDetailRoute } from "@/shared/constants/routes";
 import type { PageCursor } from "@/shared/firebase/pagination";
 import {
   CONTENT_TYPE_LABEL,
@@ -59,10 +59,7 @@ function ReportCard({
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState<ReportAction | null>(null);
-  const detailHref =
-    report.targetType === "sermon"
-      ? ROUTES.sermonDetail(report.targetId)
-      : ROUTES.testimonyDetail(report.targetId);
+  const detailHref = contentDetailRoute(report.targetType, report.targetId);
 
   const handle = async (action: ReportAction, confirmMessage: string) => {
     if (busy || !window.confirm(confirmMessage)) return;

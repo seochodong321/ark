@@ -163,6 +163,7 @@ export async function grantShareReward(params: {
 const CONTENT_COLLECTION: Record<ContentType, string> = {
   sermon: COLLECTIONS.sermons,
   testimony: COLLECTIONS.testimonies,
+  resource: COLLECTIONS.resources,
 };
 
 /** 잔액 부족 시 UI가 구분해 처리할 수 있도록 던지는 sentinel 코드 */

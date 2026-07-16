@@ -11,6 +11,7 @@ export const COLLECTIONS = {
   reports: "reports",
   seedTransactions: "seedTransactions",
   jobs: "jobs",
+  resources: "resources",
   /** 팔로우 관계 (follows/{followerUid}_{pastorUid}) */
   follows: "follows",
   notifications: "notifications",

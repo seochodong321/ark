@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ROUTES.home,
     ROUTES.sermons,
     ROUTES.testimonies,
+    ROUTES.resources,
     ROUTES.jobs,
     ROUTES.search,
     ROUTES.faq,
